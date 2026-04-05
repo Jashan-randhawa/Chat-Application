@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import {
   adminLogin,
   adminLogout,
@@ -13,7 +14,15 @@ import { adminOnly } from "../middlewares/auth.js";
 
 const app = express.Router();
 
-app.post("/verify", adminLoginValidator(), validateHandler, adminLogin);
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: "Too many login attempts, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.post("/verify", adminLoginLimiter, adminLoginValidator(), validateHandler, adminLogin);
 
 app.get("/logout", adminLogout);
 
