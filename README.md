@@ -1,125 +1,192 @@
-📱💬 Real-Time Chat Application
+# 💬 Real-Time Chat Application
 
-A 1:1 real-time chat app built with React Native (frontend) and Node.js (Express + Socket.IO) backend.
-Messages are stored in a MongoDB database, and authentication is JWT-based.
+A full-stack real-time chat application built with **React + Vite** (frontend) and **Node.js + Express + Socket.IO** (backend). Supports 1:1 messaging, group chats, file sharing, and an admin dashboard.
 
-🚀 Features (MVP)
+---
 
-🔐 Authentication: Register & Login with JWT
+## 🚀 Live Demo
 
-👥 User List: Show all users, tap to start chat
+- **Frontend:** [https://chat-application-rho-mauve.vercel.app](https://chat-application-rho-mauve.vercel.app)
+- **Backend:** [https://chat-application-production-aa42.up.railway.app](https://chat-application-production-aa42.up.railway.app)
 
-💬 Real-Time Messaging: Powered by Socket.IO
+---
 
-🗂 Persistent Messages: Stored in MongoDB
+## ✨ Features
 
-✍️ Typing Indicator: See when the other user is typing
+- 🔐 JWT-based authentication with secure HTTP-only cookies
+- 💬 Real-time messaging powered by Socket.IO
+- 👥 Group chat creation and management
+- 📁 File & media sharing via Cloudinary
+- ✍️ Typing indicators
+- 🟢 Online/offline user status
+- 🔔 Friend requests & notifications
+- 🛡️ Admin dashboard (user, chat & message management)
+- 📱 Fully responsive UI with Material UI
 
-🟢 Online/Offline Status: Track active users
+---
 
-✅ Message Delivery & Read Receipts
+## 🏗️ Project Structure
 
-📱 Mobile UI:
-
-Auth screens
-
-Home (user list + last message)
-
-Chat screen (scrollable messages, input, typing, ticks)
-
-🏗 Project Structure
+```
 Chat-Application/
-│── mobile/             # React Native app
+├── chatapp-frontend-master/     # React + Vite frontend
 │   ├── src/
-│   │   ├── screens/    # Auth, Home, Chat
-│   │   ├── components/
-│   │   ├── services/   # API & socket services
-│   │   └── store/      # State management
+│   │   ├── components/          # UI components
+│   │   ├── pages/               # Route pages
+│   │   ├── redux/               # State management (RTK)
+│   │   ├── constants/           # Config & colors
+│   │   ├── hooks/               # Custom hooks
+│   │   └── socket.jsx           # Socket.IO client
+│   └── vercel.json              # Vercel SPA config
 │
-│── server/             # Node.js backend
-│   ├── src/
-│   │   ├── models/     # User, Message
-│   │   ├── routes/     # auth, users, messages
-│   │   ├── controllers/
-│   │   ├── sockets/
-│   │   └── app.js
-│   └── .env
-│
-└── README.md
+└── chatapp-server-master/       # Node.js backend
+    ├── controllers/             # Route handlers
+    ├── models/                  # Mongoose models
+    ├── routes/                  # API routes
+    ├── middlewares/             # Auth, error, multer
+    ├── utils/                   # DB, JWT, Cloudinary
+    └── app.js                   # Entry point
+```
 
-⚙️ Setup
-1. Clone the repo
+---
+
+## ⚙️ Local Setup
+
+### 1. Clone the repo
+
+```bash
 git clone https://github.com/YOUR_USERNAME/Chat-Application.git
 cd Chat-Application
+```
 
-2. Setup backend
-cd server
+### 2. Setup Backend
+
+```bash
+cd chatapp-server-master
 npm install
+```
 
+Create a `.env` file:
 
-Create a .env file:
-
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/chatapp
-JWT_SECRET=supersecret
-
+```env
+PORT=3000
+NODE_ENV=DEVELOPMENT
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/chatapp
+JWT_SECRET=your_jwt_secret
+ADMIN_SECRET_KEY=your_admin_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+CLIENT_URL=http://localhost:5173
+```
 
 Run the server:
 
+```bash
 npm run dev
+```
 
-3. Setup mobile
-cd ../mobile
+### 3. Setup Frontend
+
+```bash
+cd ../chatapp-frontend-master
 npm install
-npm start
+```
 
-🌐 REST API Endpoints
-Auth
+Create a `.env` file:
 
-POST /auth/register → Register new user
+```env
+VITE_SERVER=http://localhost:3000
+```
 
-POST /auth/login → Login & get JWT
+Run the frontend:
 
-Users
+```bash
+npm run dev
+```
 
-GET /users → Get all users (except self)
+---
 
-Conversations
+## 🌐 API Endpoints
 
-GET /conversations/:id/messages → Get chat history with user id
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/user/new` | Register new user |
+| POST | `/api/v1/user/login` | Login |
+| GET | `/api/v1/user/logout` | Logout |
+| GET | `/api/v1/user/me` | Get current user |
 
-🔌 Socket.IO Events
-Event	Payload	Description
-message:send	{receiverId, text}	Send new message
-message:new	message	Receive new message
-typing:start	{to}	Notify typing started
-typing:stop	{to}	Notify typing stopped
-message:read	{messageId}	Mark message as read
-user:online	{userId}	Mark user online
-disconnect	–	Mark user offline
-👥 Sample Users
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/user/search` | Search users |
+| PUT | `/api/v1/user/sendrequest` | Send friend request |
+| PUT | `/api/v1/user/acceptrequest` | Accept friend request |
+| GET | `/api/v1/user/notifications` | Get notifications |
 
-Register via POST /auth/register or use dummy users:
+### Chats
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/chat/my` | Get my chats |
+| POST | `/api/v1/chat/new` | Create group chat |
+| GET | `/api/v1/chat/my/groups` | Get my groups |
+| PUT | `/api/v1/chat/addmembers` | Add group members |
+| DELETE | `/api/v1/chat/leave/:id` | Leave group |
 
-[
-  { "username": "alice", "password": "123456" },
-  { "username": "bob", "password": "123456" }
-]
+---
 
-📝 Deliverables
+## 🔌 Socket.IO Events
 
-/mobile → React Native frontend
+| Event | Description |
+|-------|-------------|
+| `NEW_MESSAGE` | Send/receive a new message |
+| `NEW_MESSAGE_ALERT` | Notify about unread message |
+| `START_TYPING` | User started typing |
+| `STOP_TYPING` | User stopped typing |
+| `CHAT_JOINED` | User joined a chat |
+| `CHAT_LEAVED` | User left a chat |
+| `ONLINE_USERS` | Broadcast online users list |
 
-/server → Node.js backend with Express + Socket.IO
+---
 
-README.md → setup, env vars, sample users
+## ☁️ Deployment
 
-💡 Future Improvements:
+### Frontend → Vercel
+1. Push `chatapp-frontend-master` to GitHub
+2. Import in [vercel.com](https://vercel.com)
+3. Add environment variable: `VITE_SERVER=https://your-railway-url.up.railway.app`
+4. Deploy
 
-Push notifications
+### Backend → Railway
+1. Push `chatapp-server-master` to GitHub
+2. Import in [railway.app](https://railway.app)
+3. Set root directory to `chatapp-server-master`
+4. Add all environment variables
+5. Deploy
 
-Group chats
+---
 
-Profile pictures & media sharing
+## 🛠️ Tech Stack
 
-Deployment on cloud (Heroku/Render + Expo EAS)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Vite, Material UI, Redux Toolkit |
+| Backend | Node.js, Express.js |
+| Database | MongoDB Atlas + Mongoose |
+| Real-time | Socket.IO |
+| Auth | JWT + HTTP-only cookies |
+| File Storage | Cloudinary |
+| Deployment | Vercel (frontend) + Railway (backend) |
+
+---
+
+## 👤 Admin Access
+
+Visit `/admin` on the frontend and use your `ADMIN_SECRET_KEY` to access the admin dashboard.
+
+---
+
+## 📝 License
+
+MIT
