@@ -16,6 +16,7 @@
     "@mui/material": "^5.15.9",
     "@mui/x-data-grid": "^6.19.4",
     "@reduxjs/toolkit": "^2.2.1",
+    "@vercel/analytics": "^2.0.1",
     "6pp": "^1.1.15",
     "axios": "^1.6.7",
     "chart.js": "^4.4.1",
