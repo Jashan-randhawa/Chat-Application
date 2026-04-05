@@ -28,7 +28,12 @@ const adminOnly = (req, res, next) => {
   if (!token)
     return next(new ErrorHandler("Only Admin can access this route", 401));
 
-  const secretKey = jwt.verify(token, process.env.JWT_SECRET);
+  let secretKey;
+  try {
+    secretKey = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return next(new ErrorHandler("Invalid or expired admin token", 401));
+  }
 
   const isMatched = secretKey === adminSecretKey;
 
