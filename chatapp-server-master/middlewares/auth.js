@@ -10,7 +10,12 @@ const isAuthenticated = TryCatch((req, res, next) => {
   if (!token)
     return next(new ErrorHandler("Please login to access this route", 401));
 
-  const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+  let decodedData;
+  try {
+    decodedData = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return next(new ErrorHandler("Please login to access this route", 401));
+  }
 
   req.user = decodedData._id;
 
