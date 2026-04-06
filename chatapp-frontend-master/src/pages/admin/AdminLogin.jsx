@@ -1,5 +1,13 @@
 import { useInputValidation } from "6pp";
-import { Button, Container, Paper, TextField, Typography, useTheme } from "@mui/material";
+import {
+  Button,
+  Container,
+  Paper,
+  TextField,
+  Typography,
+  alpha,
+  useTheme,
+} from "@mui/material";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
@@ -43,13 +51,17 @@ const AdminLogin = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            bgcolor: "rgba(255,255,255,0.95)",
+            bgcolor: alpha(theme.palette.background.paper, 0.95),
           }}
         >
           <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
             Admin Login
           </Typography>
-          <form style={{ width: "100%", marginTop: "1rem" }} onSubmit={submitHandler} aria-label="Admin login form">
+          <form
+            style={{ width: "100%", marginTop: "1rem" }}
+            onSubmit={submitHandler}
+            aria-label="Admin login form"
+          >
             <TextField
               required
               fullWidth
@@ -62,7 +74,13 @@ const AdminLogin = () => {
               inputProps={{ "aria-label": "Admin secret key" }}
             />
 
-            <Button sx={{ marginTop: "1rem" }} variant="contained" type="submit" fullWidth aria-label="Admin login">
+            <Button
+              sx={{ marginTop: "1rem" }}
+              variant="contained"
+              type="submit"
+              fullWidth
+              aria-label="Admin login"
+            >
               Login
             </Button>
           </form>

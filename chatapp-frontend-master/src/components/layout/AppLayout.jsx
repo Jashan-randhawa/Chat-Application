@@ -27,6 +27,7 @@ import ChatList from "../specific/ChatList";
 import Profile from "../specific/Profile";
 import Header from "./Header";
 import { LayoutLoader } from "./Loaders";
+import { uiTokens } from "../../design-system/tokens";
 
 const AppLayout = () => (WrappedComponent) => {
   function AppLayoutWrapper(props) {
@@ -126,7 +127,10 @@ const AppLayout = () => (WrappedComponent) => {
               md={3}
               sx={{
                 display: { xs: "none", sm: "block" },
-                backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.paper : "#0a0f1f",
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.background.paper
+                    : uiTokens.colors.surfaces.sidebar,
                 borderRight: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
               }}
               height="100%"
@@ -162,7 +166,10 @@ const AppLayout = () => (WrappedComponent) => {
               sx={{
                 display: { xs: "none", md: "block" },
                 padding: "2rem",
-                bgcolor: theme.palette.mode === "dark" ? "#0d142b" : "#111a34",
+                bgcolor:
+                  theme.palette.mode === "dark"
+                    ? uiTokens.colors.surfaces.profilePanel
+                    : uiTokens.colors.surfaces.sidebarLight,
               }}
             >
               <Profile user={user} />

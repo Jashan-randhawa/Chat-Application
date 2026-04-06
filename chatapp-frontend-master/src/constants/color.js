@@ -1,3 +1,4 @@
+import { alpha } from "@mui/material/styles";
 import { uiTokens } from "../design-system/tokens";
 
 export const brandIndigo = uiTokens.colors.primary.main;
@@ -5,8 +6,8 @@ export const brandIndigoDark = uiTokens.colors.primary.dark;
 export const brandTeal = uiTokens.colors.secondary.main;
 
 export const navyDark = uiTokens.colors.neutral[900];
-export const navySurface = "#111a34";
-export const profilePanel = "#0d142b";
+export const navySurface = uiTokens.colors.surfaces.sidebarLight;
+export const profilePanel = uiTokens.colors.surfaces.profilePanel;
 
 export const coolWhite = uiTokens.colors.neutral[50];
 export const cardWhite = uiTokens.colors.neutral[0];
@@ -20,10 +21,10 @@ export const brandGradient = uiTokens.gradients.brand;
 export const pageGradient = uiTokens.gradients.page;
 
 export const orange = brandIndigo;
-export const orangeLight = "rgba(99, 102, 241, 0.2)";
+export const orangeLight = alpha(brandIndigo, 0.2);
 export const grayColor = coolWhite;
 export const lightBlue = brandTeal;
 export const matBlack = navyDark;
 export const bgGradient = pageGradient;
 export const purple = brandIndigoDark;
-export const purpleLight = "rgba(99, 102, 241, 0.2)";
+export const purpleLight = alpha(brandIndigo, 0.2);

@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Link as LinkComponent, Navigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { adminLogout } from "../../redux/thunks/admin";
+import { uiTokens } from "../../design-system/tokens";
 
 const Link = styled(LinkComponent)(({ theme }) => ({
   textDecoration: "none",
@@ -34,7 +35,7 @@ const Link = styled(LinkComponent)(({ theme }) => ({
   },
   "&:focus-visible": {
     outline: "none",
-    boxShadow: "0 0 0 3px rgba(99,102,241,0.24)",
+    boxShadow: uiTokens.shadows.focus,
   },
 }));
 
@@ -110,7 +111,7 @@ const AdminLayout = ({ children }) => {
           position: "fixed",
           right: "1rem",
           top: "1rem",
-          zIndex: 10,
+          zIndex: uiTokens.zIndex.mobileNavToggle,
         }}
       >
         <IconButton onClick={handleMobile} aria-label="Toggle admin navigation drawer">

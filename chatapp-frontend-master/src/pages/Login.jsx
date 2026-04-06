@@ -30,10 +30,10 @@ const Login = () => {
 
   const inputSx = {
     "& .MuiOutlinedInput-root": {
-      color: "#eff3ff",
+      color: theme.palette.primary.contrastText,
       borderRadius: "0.85rem",
       "& fieldset": {
-        borderColor: "rgba(239,243,255,0.25)",
+        borderColor: alpha(theme.palette.primary.contrastText, 0.25),
       },
       "&:hover fieldset": {
         borderColor: alpha(theme.palette.primary.main, 0.75),
@@ -44,7 +44,7 @@ const Login = () => {
       },
     },
     "& .MuiInputLabel-root": {
-      color: "rgba(239,243,255,0.7)",
+      color: alpha(theme.palette.primary.contrastText, 0.7),
     },
     "& .MuiInputLabel-root.Mui-focused": {
       color: alpha(theme.palette.primary.light, 0.95),
@@ -152,7 +152,7 @@ const Login = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            color: "#eff3ff",
+            color: theme.palette.primary.contrastText,
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -252,7 +252,7 @@ const Login = () => {
                     boxShadow: `0 0 18px ${alpha(theme.palette.primary.main, 0.35)}`,
                   }}
                   src={avatar.preview}
-                  alt="Selected profile"
+                  alt={avatar.preview ? "Selected profile picture" : "Default profile avatar"}
                 />
 
                 <IconButton

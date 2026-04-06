@@ -10,6 +10,7 @@ import {
 import {
   Box,
   Container,
+  IconButton,
   Paper,
   Skeleton,
   Stack,
@@ -43,7 +44,10 @@ const Dashboard = () => {
   const Appbar = (
     <Paper elevation={3} sx={{ padding: "2rem", margin: "2rem 0", borderRadius: "1rem" }}>
       <Stack direction="row" alignItems="center" spacing="1rem" flexWrap="wrap">
-        <AdminPanelSettingsIcon sx={{ fontSize: "3rem", color: theme.palette.primary.main }} />
+        <AdminPanelSettingsIcon
+          sx={{ fontSize: "3rem", color: theme.palette.primary.main }}
+          aria-hidden="true"
+        />
 
         <SearchField placeholder="Search..." aria-label="Dashboard search" />
 
@@ -57,7 +61,9 @@ const Dashboard = () => {
           {moment().format("dddd, D MMMM YYYY")}
         </Typography>
 
-        <NotificationsIcon color="action" />
+        <IconButton aria-label="View notifications" color="default">
+          <NotificationsIcon color="action" />
+        </IconButton>
       </Stack>
     </Paper>
   );

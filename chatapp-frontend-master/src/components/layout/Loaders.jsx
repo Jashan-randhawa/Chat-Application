@@ -1,5 +1,6 @@
 import { Grid, Skeleton, Stack, alpha, useTheme } from "@mui/material";
 import { BouncingSkeleton } from "../styles/StyledComponents";
+import { uiTokens } from "../../design-system/tokens";
 
 const LayoutLoader = () => {
   const theme = useTheme();
@@ -12,7 +13,10 @@ const LayoutLoader = () => {
         md={3}
         sx={{
           display: { xs: "none", sm: "block" },
-          backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.paper : "#0a0f1f",
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? theme.palette.background.paper
+              : uiTokens.colors.surfaces.sidebar,
           padding: "1rem",
         }}
         height="100%"
@@ -60,7 +64,10 @@ const LayoutLoader = () => {
         height="100%"
         sx={{
           display: { xs: "none", md: "block" },
-          backgroundColor: theme.palette.mode === "dark" ? "#0d142b" : "#111a34",
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? uiTokens.colors.surfaces.profilePanel
+              : uiTokens.colors.surfaces.sidebarLight,
           p: "2rem",
         }}
       >

@@ -76,14 +76,14 @@ const CurveButton = styled("button")(({ theme }) => ({
   color: theme.palette.primary.contrastText,
   fontSize: "1rem",
   fontWeight: 600,
-  boxShadow: "0 10px 24px rgba(17, 26, 52, 0.35)",
+  boxShadow: uiTokens.shadows.cta,
   transition: "transform 0.2s ease, filter 0.2s ease",
   "&:hover": {
     transform: "translateY(-1px)",
     filter: "brightness(1.04)",
   },
   "&:focus-visible": {
-    boxShadow: `${uiTokens.shadows.focus}, 0 10px 24px rgba(17, 26, 52, 0.35)`,
+    boxShadow: `${uiTokens.shadows.focus}, ${uiTokens.shadows.cta}`,
   },
 }));
 
