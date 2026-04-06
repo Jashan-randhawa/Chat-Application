@@ -37,7 +37,7 @@ const MessageComponent = ({ message, user }) => {
       )}
 
       {content && (
-        <Typography sx={{ wordBreak: "break-word", lineHeight: 1.45 }}>
+        <Typography sx={{ wordBreak: "break-word", lineHeight: 1.5 }}>
           {content}
         </Typography>
       )}
