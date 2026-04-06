@@ -35,7 +35,7 @@ import {
 } from "../../constants/color";
 
 const AppLayout = () => (WrappedComponent) => {
-  const AppLayoutWrapper = (props) => {
+  function AppLayoutWrapper(props) {
     const params = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -176,7 +176,7 @@ const AppLayout = () => (WrappedComponent) => {
         )}
       </>
     );
-  };
+  }
 
   AppLayoutWrapper.displayName = `AppLayout(${
     WrappedComponent.displayName || WrappedComponent.name || "Component"
