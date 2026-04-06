@@ -3,7 +3,7 @@ import { transformImage } from "../../lib/features";
 
 // Todo Transform
 const AvatarCard = ({ avatar = [], max = 4, name = "User" }) => {
-  const initial = name.trim().charAt(0).toUpperCase() || "U";
+  const initial = (name || "").toString().trim().charAt(0).toUpperCase() || "U";
   const hasAvatar = Array.isArray(avatar) && avatar.length > 0;
 
   return (
@@ -18,7 +18,7 @@ const AvatarCard = ({ avatar = [], max = 4, name = "User" }) => {
           <Box width={"5rem"} height={"3rem"}>
             {avatar.map((i, index) => (
               <Avatar
-                key={i || `avatar-${index}`}
+                key={index}
                 src={transformImage(i)}
                 alt={`Avatar ${index}`}
                 sx={{
