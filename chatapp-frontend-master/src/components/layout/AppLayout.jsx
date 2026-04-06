@@ -1,5 +1,5 @@
-import { Drawer, Grid, Skeleton } from "@mui/material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Drawer, Grid } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -26,9 +26,16 @@ import Title from "../shared/Title";
 import ChatList from "../specific/ChatList";
 import Profile from "../specific/Profile";
 import Header from "./Header";
+import { LayoutLoader } from "./Loaders";
+import {
+  coolWhite,
+  navyDark,
+  profilePanel,
+  sidebarDivider,
+} from "../../constants/color";
 
 const AppLayout = () => (WrappedComponent) => {
-  return (props) => {
+  function AppLayoutWrapper(props) {
     const params = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -64,7 +71,7 @@ const AppLayout = () => (WrappedComponent) => {
         if (data.chatId === chatId) return;
         dispatch(setNewMessagesAlert(data));
       },
-      [chatId]
+      [chatId, dispatch]
     );
 
     const newRequestListener = useCallback(() => {
@@ -100,11 +107,11 @@ const AppLayout = () => (WrappedComponent) => {
         />
 
         {isLoading ? (
-          <Skeleton />
+          <LayoutLoader />
         ) : (
           <Drawer open={isMobile} onClose={handleMobileClose}>
             <ChatList
-              w="70vw"
+              w="74vw"
               chats={data?.chats}
               chatId={chatId}
               handleDeleteChat={handleDeleteChat}
@@ -114,19 +121,21 @@ const AppLayout = () => (WrappedComponent) => {
           </Drawer>
         )}
 
-        <Grid container height={"calc(100vh - 4rem)"}>
-          <Grid
-            item
-            sm={4}
-            md={3}
-            sx={{
-              display: { xs: "none", sm: "block" },
-            }}
-            height={"100%"}
-          >
-            {isLoading ? (
-              <Skeleton />
-            ) : (
+        {isLoading ? (
+          <LayoutLoader />
+        ) : (
+          <Grid container height={"calc(100vh - 4rem)"}>
+            <Grid
+              item
+              sm={4}
+              md={3}
+              sx={{
+                display: { xs: "none", sm: "block" },
+                backgroundColor: navyDark,
+                borderRight: `1px solid ${sidebarDivider}`,
+              }}
+              height={"100%"}
+            >
               <ChatList
                 chats={data?.chats}
                 chatId={chatId}
@@ -134,29 +143,46 @@ const AppLayout = () => (WrappedComponent) => {
                 newMessagesAlert={newMessagesAlert}
                 onlineUsers={onlineUsers}
               />
-            )}
-          </Grid>
-          <Grid item xs={12} sm={8} md={5} lg={6} height={"100%"}>
-            <WrappedComponent {...props} chatId={chatId} user={user} />
-          </Grid>
+            </Grid>
+            <Grid
+              item
+              xs={12}
+              sm={8}
+              md={5}
+              lg={6}
+              height={"100%"}
+              sx={{
+                backgroundColor: coolWhite,
+                borderRight: { md: `1px solid rgba(17, 26, 52, 0.08)` },
+              }}
+            >
+              <WrappedComponent {...props} chatId={chatId} user={user} />
+            </Grid>
 
-          <Grid
-            item
-            md={4}
-            lg={3}
-            height={"100%"}
-            sx={{
-              display: { xs: "none", md: "block" },
-              padding: "2rem",
-              bgcolor: "rgba(0,0,0,0.85)",
-            }}
-          >
-            <Profile user={user} />
+            <Grid
+              item
+              md={4}
+              lg={3}
+              height={"100%"}
+              sx={{
+                display: { xs: "none", md: "block" },
+                padding: "2rem",
+                bgcolor: profilePanel,
+              }}
+            >
+              <Profile user={user} />
+            </Grid>
           </Grid>
-        </Grid>
+        )}
       </>
     );
-  };
+  }
+
+  AppLayoutWrapper.displayName = `AppLayout(${
+    WrappedComponent.displayName || WrappedComponent.name || "Component"
+  })`;
+
+  return AppLayoutWrapper;
 };
 
 export default AppLayout;
