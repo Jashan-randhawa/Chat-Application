@@ -276,6 +276,11 @@ const Chat = ({ chatId, user }) => {
           <IconButton
             type="submit"
             disabled={!message.trim()}
+            aria-label={
+              message.trim()
+                ? "Send message"
+                : "Send message (disabled when message is empty)"
+            }
             sx={{
               rotate: "-30deg",
               bgcolor: orange,
