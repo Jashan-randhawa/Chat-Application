@@ -1,4 +1,4 @@
-import { Drawer, Grid } from "@mui/material";
+import { Drawer, Grid, alpha, useTheme } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -27,15 +27,10 @@ import ChatList from "../specific/ChatList";
 import Profile from "../specific/Profile";
 import Header from "./Header";
 import { LayoutLoader } from "./Loaders";
-import {
-  coolWhite,
-  navyDark,
-  profilePanel,
-  sidebarDivider,
-} from "../../constants/color";
 
 const AppLayout = () => (WrappedComponent) => {
   function AppLayoutWrapper(props) {
+    const theme = useTheme();
     const params = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -58,18 +53,18 @@ const AppLayout = () => (WrappedComponent) => {
       getOrSaveFromStorage({ key: NEW_MESSAGE_ALERT, value: newMessagesAlert });
     }, [newMessagesAlert]);
 
-    const handleDeleteChat = (e, chatId, groupChat) => {
+    const handleDeleteChat = (e, selectedChatId, groupChat) => {
       dispatch(setIsDeleteMenu(true));
-      dispatch(setSelectedDeleteChat({ chatId, groupChat }));
+      dispatch(setSelectedDeleteChat({ chatId: selectedChatId, groupChat }));
       deleteMenuAnchor.current = e.currentTarget;
     };
 
     const handleMobileClose = () => dispatch(setIsMobile(false));
 
     const newMessageAlertListener = useCallback(
-      (data) => {
-        if (data.chatId === chatId) return;
-        dispatch(setNewMessagesAlert(data));
+      (incoming) => {
+        if (incoming.chatId === chatId) return;
+        dispatch(setNewMessagesAlert(incoming));
       },
       [chatId, dispatch]
     );
@@ -83,8 +78,8 @@ const AppLayout = () => (WrappedComponent) => {
       navigate("/");
     }, [refetch, navigate]);
 
-    const onlineUsersListener = useCallback((data) => {
-      setOnlineUsers(data);
+    const onlineUsersListener = useCallback((list) => {
+      setOnlineUsers(list);
     }, []);
 
     const eventHandlers = {
@@ -124,17 +119,17 @@ const AppLayout = () => (WrappedComponent) => {
         {isLoading ? (
           <LayoutLoader />
         ) : (
-          <Grid container height={"calc(100vh - 4rem)"}>
+          <Grid container height="calc(100vh - 4rem)">
             <Grid
               item
               sm={4}
               md={3}
               sx={{
                 display: { xs: "none", sm: "block" },
-                backgroundColor: navyDark,
-                borderRight: `1px solid ${sidebarDivider}`,
+                backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.paper : "#0a0f1f",
+                borderRight: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
               }}
-              height={"100%"}
+              height="100%"
             >
               <ChatList
                 chats={data?.chats}
@@ -150,10 +145,10 @@ const AppLayout = () => (WrappedComponent) => {
               sm={8}
               md={5}
               lg={6}
-              height={"100%"}
+              height="100%"
               sx={{
-                backgroundColor: coolWhite,
-                borderRight: { md: `1px solid rgba(17, 26, 52, 0.08)` },
+                backgroundColor: theme.palette.background.default,
+                borderRight: { md: `1px solid ${theme.palette.divider}` },
               }}
             >
               <WrappedComponent {...props} chatId={chatId} user={user} />
@@ -163,11 +158,11 @@ const AppLayout = () => (WrappedComponent) => {
               item
               md={4}
               lg={3}
-              height={"100%"}
+              height="100%"
               sx={{
                 display: { xs: "none", md: "block" },
                 padding: "2rem",
-                bgcolor: profilePanel,
+                bgcolor: theme.palette.mode === "dark" ? "#0d142b" : "#111a34",
               }}
             >
               <Profile user={user} />
@@ -178,9 +173,7 @@ const AppLayout = () => (WrappedComponent) => {
     );
   }
 
-  AppLayoutWrapper.displayName = `AppLayout(${
-    WrappedComponent.displayName || WrappedComponent.name || "Component"
-  })`;
+  AppLayoutWrapper.displayName = `AppLayout(${WrappedComponent.displayName || WrappedComponent.name || "Component"})`;
 
   return AppLayoutWrapper;
 };

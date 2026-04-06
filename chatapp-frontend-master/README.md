@@ -1,8 +1,19 @@
 # React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project uses React with Vite for the chat frontend.
 
-Currently, two official plugins are available:
+## UI Design System Conventions
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Use centralized tokens from `/home/runner/work/Chat-Application/Chat-Application/chatapp-frontend-master/src/design-system/tokens.js` as the single source of truth for colors, gradients, typography families, radius, and shadows.
+- Use the centralized MUI theme from `/home/runner/work/Chat-Application/Chat-Application/chatapp-frontend-master/src/design-system/theme.js` and consume values via `useTheme()` where possible.
+- Avoid introducing new hard-coded colors in pages/components when a token or `theme.palette` value exists.
+- For shared reusable primitives, prefer theme-aware styles in `/home/runner/work/Chat-Application/Chat-Application/chatapp-frontend-master/src/components/styles/StyledComponents.jsx`.
+- Keep interaction accessibility consistent:
+  - Ensure keyboard-visible focus states (`:focus-visible`) for interactive custom elements.
+  - Provide `aria-label` for icon-only buttons and key form controls.
+  - Keep text/foreground colors at contrast-safe levels against their backgrounds.
+
+## Validation
+
+- Build: `npm run build`
+- Lint: `npm run lint` (repository currently has pre-existing lint issues unrelated to these UI changes)
