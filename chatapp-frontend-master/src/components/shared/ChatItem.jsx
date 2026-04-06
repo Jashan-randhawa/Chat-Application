@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
 import { memo } from "react";
-import { Link } from "../styles/StyledComponents";
-import { Box, Chip, Stack, Typography, keyframes } from "@mui/material";
-import AvatarCard from "./AvatarCard";
+import { Box, Chip, Stack, Typography, alpha, keyframes, useTheme } from "@mui/material";
 import { motion } from "framer-motion";
+import { Link } from "../styles/StyledComponents";
+import AvatarCard from "./AvatarCard";
 
 const pulseOnline = keyframes`
   0% { box-shadow: 0 0 0 0 rgba(34,193,195,0.55); }
@@ -21,6 +21,7 @@ const ChatItem = ({
   index = 0,
   handleDeleteChat,
 }) => {
+  const theme = useTheme();
   const unreadCount = newMessageAlert?.count || 0;
 
   return (
@@ -30,6 +31,7 @@ const ChatItem = ({
       }}
       to={`/chat/${_id}`}
       onContextMenu={(e) => handleDeleteChat(e, _id, groupChat)}
+      aria-label={`Open chat ${name}`}
     >
       <motion.div
         initial={{ opacity: 0, y: "-14%" }}
@@ -40,9 +42,14 @@ const ChatItem = ({
           gap: "0.85rem",
           alignItems: "center",
           background: sameSender
-            ? "linear-gradient(120deg, rgba(108,99,255,0.28), rgba(34,193,195,0.2))"
+            ? `linear-gradient(120deg, ${alpha(theme.palette.primary.main, 0.28)}, ${alpha(
+                theme.palette.secondary.main,
+                0.2
+              )})`
             : "rgba(255,255,255,0.03)",
-          borderLeft: sameSender ? "3px solid #6c63ff" : "3px solid transparent",
+          borderLeft: sameSender
+            ? `3px solid ${theme.palette.primary.main}`
+            : "3px solid transparent",
           color: "#e9eeff",
           position: "relative",
           padding: "0.8rem",
@@ -71,8 +78,8 @@ const ChatItem = ({
               sx={{
                 mt: 0.35,
                 width: "fit-content",
-                backgroundColor: "rgba(108,99,255,0.2)",
-                color: "#dbe0ff",
+                backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                color: alpha(theme.palette.primary.contrastText, 0.9),
                 fontWeight: 600,
               }}
             />
@@ -85,7 +92,7 @@ const ChatItem = ({
               width: "9px",
               height: "9px",
               borderRadius: "50%",
-              backgroundColor: "#22c1c3",
+              backgroundColor: theme.palette.secondary.main,
               position: "absolute",
               top: "50%",
               right: "0.9rem",
