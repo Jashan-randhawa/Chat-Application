@@ -1,5 +1,5 @@
 import { Drawer, Grid } from "@mui/material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -35,7 +35,7 @@ import {
 } from "../../constants/color";
 
 const AppLayout = () => (WrappedComponent) => {
-  return (props) => {
+  const AppLayoutComponent = (props) => {
     const params = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -177,6 +177,12 @@ const AppLayout = () => (WrappedComponent) => {
       </>
     );
   };
+
+  AppLayoutComponent.displayName = `AppLayout(${
+    WrappedComponent.displayName || WrappedComponent.name || "Component"
+  })`;
+
+  return AppLayoutComponent;
 };
 
 export default AppLayout;

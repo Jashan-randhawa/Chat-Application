@@ -1,12 +1,7 @@
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+/* eslint-disable react/prop-types */
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import AppLayout from "../components/layout/AppLayout";
-import { Box, IconButton, Stack, Typography } from "@mui/material";
+import { IconButton, Stack, Typography } from "@mui/material";
 import { grayColor, orange } from "../constants/color";
 import {
   AttachFile as AttachFileIcon,
@@ -31,9 +26,8 @@ import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
 import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
-import { TypingLoader } from "../components/layout/Loaders";
+import { LayoutLoader, TypingLoader } from "../components/layout/Loaders";
 import { useNavigate } from "react-router-dom";
-import { LayoutLoader } from "../components/layout/Loaders";
 
 const Chat = ({ chatId, user }) => {
   const socket = getSocket();

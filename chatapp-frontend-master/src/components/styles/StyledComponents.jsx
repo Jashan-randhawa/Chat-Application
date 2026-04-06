@@ -4,7 +4,6 @@ import {
   brandGradient,
   coolWhite,
   glassStroke,
-  navyDark,
   strongText,
 } from "../../constants/color";
 

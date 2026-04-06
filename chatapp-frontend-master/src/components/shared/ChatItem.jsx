@@ -1,4 +1,5 @@
-import React, { memo } from "react";
+/* eslint-disable react/prop-types */
+import { memo } from "react";
 import { Link } from "../styles/StyledComponents";
 import { Box, Chip, Stack, Typography, keyframes } from "@mui/material";
 import AvatarCard from "./AvatarCard";

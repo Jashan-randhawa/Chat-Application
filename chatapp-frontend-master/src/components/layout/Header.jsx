@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import {
   AppBar,
   Backdrop,
@@ -10,7 +11,7 @@ import {
   keyframes,
   styled,
 } from "@mui/material";
-import React, { Suspense, lazy } from "react";
+import { Suspense, lazy } from "react";
 import {
   Add as AddIcon,
   Menu as MenuIcon,
