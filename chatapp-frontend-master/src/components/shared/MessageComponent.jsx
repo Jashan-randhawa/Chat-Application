@@ -1,17 +1,16 @@
 /* eslint-disable react/prop-types */
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, alpha, useTheme } from "@mui/material";
 import { memo } from "react";
-import { lightBlue, orange, strongText } from "../../constants/color";
 import moment from "moment";
+import { motion } from "framer-motion";
 import { fileFormat } from "../../lib/features";
 import RenderAttachment from "./RenderAttachment";
-import { motion } from "framer-motion";
 
 const MessageComponent = ({ message, user }) => {
+  const theme = useTheme();
   const { sender, content, attachments = [], createdAt } = message;
 
   const sameSender = sender?._id === user?._id;
-
   const timeAgo = moment(createdAt).fromNow();
 
   return (
@@ -21,9 +20,15 @@ const MessageComponent = ({ message, user }) => {
       transition={{ duration: 0.24, ease: "easeOut" }}
       style={{
         alignSelf: sameSender ? "flex-end" : "flex-start",
-        backgroundColor: sameSender ? orange : "#ffffff",
-        color: sameSender ? "#ffffff" : strongText,
-        borderRadius: sameSender ? "1.1rem 1.1rem 0.3rem 1.1rem" : "1.1rem 1.1rem 1.1rem 0.3rem",
+        backgroundColor: sameSender
+          ? theme.palette.primary.main
+          : theme.palette.background.paper,
+        color: sameSender
+          ? theme.palette.primary.contrastText
+          : theme.palette.text.primary,
+        borderRadius: sameSender
+          ? "1.1rem 1.1rem 0.3rem 1.1rem"
+          : "1.1rem 1.1rem 1.1rem 0.3rem",
         padding: "0.7rem 0.92rem",
         width: "fit-content",
         maxWidth: "75%",
@@ -31,7 +36,7 @@ const MessageComponent = ({ message, user }) => {
       }}
     >
       {!sameSender && (
-        <Typography color={lightBlue} fontWeight={700} variant="caption">
+        <Typography color={theme.palette.secondary.main} fontWeight={700} variant="caption">
           {sender.name}
         </Typography>
       )}
@@ -55,7 +60,9 @@ const MessageComponent = ({ message, user }) => {
                 rel="noreferrer"
                 download
                 style={{
-                  color: sameSender ? "#eef2ff" : strongText,
+                  color: sameSender
+                    ? alpha(theme.palette.primary.contrastText, 0.92)
+                    : theme.palette.text.primary,
                 }}
               >
                 {RenderAttachment(file, url)}
@@ -67,7 +74,9 @@ const MessageComponent = ({ message, user }) => {
       <Typography
         variant="caption"
         sx={{
-          color: sameSender ? "rgba(255,255,255,0.82)" : "rgba(30,36,56,0.5)",
+          color: sameSender
+            ? alpha(theme.palette.primary.contrastText, 0.82)
+            : alpha(theme.palette.text.primary, 0.56),
           display: "block",
           mt: 0.45,
           textAlign: "right",
