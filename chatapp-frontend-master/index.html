@@ -4,6 +4,37 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(108, 99, 255, 0.55) rgba(10, 15, 31, 0.1);
+      }
+      *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      *::-webkit-scrollbar-track {
+        background: rgba(10, 15, 31, 0.08);
+        border-radius: 999px;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #6c63ff, #22c1c3);
+        border-radius: 999px;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        filter: brightness(1.05);
+      }
+    </style>
     <title>Echo Chat</title>
   </head>
   <body>

@@ -6,11 +6,12 @@ import React, {
   useState,
 } from "react";
 import AppLayout from "../components/layout/AppLayout";
-import { IconButton, Skeleton, Stack } from "@mui/material";
+import { Box, IconButton, Stack, Typography } from "@mui/material";
 import { grayColor, orange } from "../constants/color";
 import {
   AttachFile as AttachFileIcon,
   Send as SendIcon,
+  Forum as ForumIcon,
 } from "@mui/icons-material";
 import { InputBox } from "../components/styles/StyledComponents";
 import FileMenu from "../components/dialogs/FileMenu";
@@ -32,6 +33,7 @@ import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
 import { TypingLoader } from "../components/layout/Loaders";
 import { useNavigate } from "react-router-dom";
+import { LayoutLoader } from "../components/layout/Loaders";
 
 const Chat = ({ chatId, user }) => {
   const socket = getSocket();
@@ -82,7 +84,7 @@ const Chat = ({ chatId, user }) => {
     typingTimeout.current = setTimeout(() => {
       socket.emit(STOP_TYPING, { members, chatId });
       setIamTyping(false);
-    }, [2000]);
+    }, 2000);
   };
 
   const handleFileOpen = (e) => {
@@ -95,12 +97,13 @@ const Chat = ({ chatId, user }) => {
 
     if (!message.trim()) return;
 
-    // Emitting the message to the server
     socket.emit(NEW_MESSAGE, { chatId, members, message });
     setMessage("");
   };
 
   useEffect(() => {
+    if (!chatId || !user?._id || !members) return;
+
     socket.emit(CHAT_JOINED, { userId: user._id, members });
     dispatch(removeNewMessagesAlert(chatId));
 
@@ -111,7 +114,7 @@ const Chat = ({ chatId, user }) => {
       setPage(1);
       socket.emit(CHAT_LEAVED, { userId: user._id, members });
     };
-  }, [chatId]);
+  }, [chatId, user?._id, members, socket, dispatch, setOldMessages]);
 
   useEffect(() => {
     if (bottomRef.current)
@@ -120,7 +123,7 @@ const Chat = ({ chatId, user }) => {
 
   useEffect(() => {
     if (chatDetails.isError) return navigate("/");
-  }, [chatDetails.isError]);
+  }, [chatDetails.isError, navigate]);
 
   const newMessagesListener = useCallback(
     (data) => {
@@ -179,25 +182,62 @@ const Chat = ({ chatId, user }) => {
 
   const allMessages = [...oldMessages, ...messages];
 
-  return chatDetails.isLoading ? (
-    <Skeleton />
-  ) : (
+  if (chatDetails.isLoading) return <LayoutLoader />;
+
+  return (
     <Fragment>
       <Stack
         ref={containerRef}
         boxSizing={"border-box"}
         padding={"1rem"}
-        spacing={"1rem"}
+        spacing={"0.9rem"}
         bgcolor={grayColor}
         height={"90%"}
         sx={{
           overflowX: "hidden",
           overflowY: "auto",
+          backgroundImage:
+            "radial-gradient(circle at 2px 2px, rgba(108,99,255,0.11) 1px, transparent 0)",
+          backgroundSize: "24px 24px",
         }}
       >
-        {allMessages.map((i) => (
-          <MessageComponent key={i._id} message={i} user={user} />
-        ))}
+        {!chatId ? (
+          <Stack
+            height="100%"
+            justifyContent="center"
+            alignItems="center"
+            color="rgba(30,36,56,0.72)"
+            spacing={1.2}
+          >
+            <ForumIcon sx={{ fontSize: 56, color: "rgba(108,99,255,0.8)" }} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Select a conversation
+            </Typography>
+            <Typography variant="body2">
+              Choose a chat from the sidebar to start messaging.
+            </Typography>
+          </Stack>
+        ) : allMessages.length === 0 ? (
+          <Stack
+            height="100%"
+            justifyContent="center"
+            alignItems="center"
+            color="rgba(30,36,56,0.72)"
+            spacing={1.2}
+          >
+            <ForumIcon sx={{ fontSize: 56, color: "rgba(108,99,255,0.8)" }} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              No messages yet
+            </Typography>
+            <Typography variant="body2">
+              Send the first message and start this conversation.
+            </Typography>
+          </Stack>
+        ) : (
+          allMessages.map((i) => (
+            <MessageComponent key={i._id} message={i} user={user} />
+          ))
+        )}
 
         {userTyping && <TypingLoader />}
 
@@ -213,15 +253,20 @@ const Chat = ({ chatId, user }) => {
         <Stack
           direction={"row"}
           height={"100%"}
-          padding={"1rem"}
+          padding={"0.9rem 1rem"}
           alignItems={"center"}
           position={"relative"}
+          sx={{
+            background: "linear-gradient(120deg, rgba(108,99,255,0.08), rgba(34,193,195,0.08))",
+            borderTop: "1px solid rgba(108,99,255,0.12)",
+          }}
         >
           <IconButton
             sx={{
               position: "absolute",
               left: "1.5rem",
               rotate: "30deg",
+              color: "rgba(30,36,56,0.75)",
             }}
             onClick={handleFileOpen}
           >
@@ -236,14 +281,20 @@ const Chat = ({ chatId, user }) => {
 
           <IconButton
             type="submit"
+            disabled={!message.trim()}
             sx={{
               rotate: "-30deg",
               bgcolor: orange,
               color: "white",
               marginLeft: "1rem",
-              padding: "0.5rem",
+              padding: "0.6rem",
+              opacity: message.trim() ? 1 : 0.5,
               "&:hover": {
-                bgcolor: "error.dark",
+                bgcolor: "#564de5",
+              },
+              "&.Mui-disabled": {
+                bgcolor: "rgba(108,99,255,0.45)",
+                color: "rgba(255,255,255,0.85)",
               },
             }}
           >
