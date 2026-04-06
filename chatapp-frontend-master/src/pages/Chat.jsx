@@ -176,6 +176,11 @@ const Chat = ({ chatId, user }) => {
 
   const allMessages = [...oldMessages, ...messages];
 
+  const showMessagesLoader =
+    chatId &&
+    (oldMessagesChunk.isLoading || oldMessagesChunk.isFetching) &&
+    allMessages.length === 0;
+
   if (chatDetails.isLoading) return <LayoutLoader />;
 
   return (
@@ -183,13 +188,22 @@ const Chat = ({ chatId, user }) => {
       <Stack
         ref={containerRef}
         boxSizing={"border-box"}
-        padding={"1rem"}
-        spacing={"0.9rem"}
+        padding={{ xs: "0.75rem", sm: "1rem 1.1rem" }}
+        spacing={"0.8rem"}
         bgcolor={grayColor}
         height={"90%"}
         sx={{
           overflowX: "hidden",
           overflowY: "auto",
+          overscrollBehavior: "contain",
+          scrollbarWidth: "thin",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(108,99,255,0.28)",
+            borderRadius: "999px",
+          },
           backgroundImage:
             "radial-gradient(circle at 2px 2px, rgba(108,99,255,0.11) 1px, transparent 0)",
           backgroundSize: "24px 24px",
@@ -210,6 +224,25 @@ const Chat = ({ chatId, user }) => {
             <Typography variant="body2">
               Choose a chat from the sidebar to start messaging.
             </Typography>
+          </Stack>
+        ) : showMessagesLoader ? (
+          <Stack spacing={1.2}>
+            {Array.from({ length: 7 }).map((_, index) => (
+              <Stack
+                key={`message-skeleton-${index}`}
+                sx={{
+                  width: index % 2 ? "72%" : "58%",
+                  ml: index % 2 ? "auto" : 0,
+                  height: "2.9rem",
+                  borderRadius: index % 2 ? "1.1rem 1.1rem 0.3rem 1.1rem" : "1.1rem 1.1rem 1.1rem 0.3rem",
+                  background:
+                    index % 2
+                      ? "linear-gradient(120deg, rgba(108,99,255,0.2), rgba(108,99,255,0.12))"
+                      : "rgba(255,255,255,0.95)",
+                  boxShadow: "0 8px 18px rgba(17,26,52,0.08)",
+                }}
+              />
+            ))}
           </Stack>
         ) : allMessages.length === 0 ? (
           <Stack
@@ -247,20 +280,26 @@ const Chat = ({ chatId, user }) => {
         <Stack
           direction={"row"}
           height={"100%"}
-          padding={"0.9rem 1rem"}
+          padding={{ xs: "0.75rem", sm: "0.9rem 1rem" }}
           alignItems={"center"}
           position={"relative"}
           sx={{
             background: "linear-gradient(120deg, rgba(108,99,255,0.08), rgba(34,193,195,0.08))",
             borderTop: "1px solid rgba(108,99,255,0.12)",
+            gap: { xs: 0.3, sm: 0 },
           }}
         >
           <IconButton
             sx={{
               position: "absolute",
-              left: "1.5rem",
+              left: { xs: "1rem", sm: "1.5rem" },
               rotate: "30deg",
               color: "rgba(30,36,56,0.75)",
+              transition: "transform 0.2s ease, color 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                color: "rgba(86,77,229,0.95)",
+              },
             }}
             onClick={handleFileOpen}
           >
@@ -288,8 +327,10 @@ const Chat = ({ chatId, user }) => {
               marginLeft: "1rem",
               padding: "0.6rem",
               opacity: message.trim() ? 1 : 0.5,
+              transition: "transform 0.2s ease, background-color 0.2s ease",
               "&:hover": {
                 bgcolor: "#564de5",
+                transform: "translateY(-1px)",
               },
               "&.Mui-disabled": {
                 bgcolor: "rgba(108,99,255,0.45)",

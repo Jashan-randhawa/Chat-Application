@@ -49,7 +49,7 @@ const ChatItem = ({
           borderRadius: "0.85rem",
         }}
       >
-        <AvatarCard avatar={avatar} />
+        <AvatarCard avatar={avatar} name={name} />
 
         <Stack sx={{ minWidth: 0 }}>
           <Typography
