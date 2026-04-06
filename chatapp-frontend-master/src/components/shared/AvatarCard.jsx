@@ -18,7 +18,7 @@ const AvatarCard = ({ avatar = [], max = 4, name = "User" }) => {
           <Box width={"5rem"} height={"3rem"}>
             {avatar.map((i, index) => (
               <Avatar
-                key={index}
+                key={i || `avatar-${index}`}
                 src={transformImage(i)}
                 alt={`Avatar ${index}`}
                 sx={{

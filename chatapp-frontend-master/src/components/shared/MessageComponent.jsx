@@ -71,7 +71,7 @@ const MessageComponent = ({ message, user }) => {
           display: "block",
           mt: 0.45,
           textAlign: "right",
-          fontSize: "0.68rem",
+          fontSize: "0.75rem",
           letterSpacing: "0.1px",
         }}
       >
