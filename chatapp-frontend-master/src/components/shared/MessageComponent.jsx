@@ -24,10 +24,10 @@ const MessageComponent = ({ message, user }) => {
         backgroundColor: sameSender ? orange : "#ffffff",
         color: sameSender ? "#ffffff" : strongText,
         borderRadius: sameSender ? "1.1rem 1.1rem 0.3rem 1.1rem" : "1.1rem 1.1rem 1.1rem 0.3rem",
-        padding: "0.65rem 0.85rem",
+        padding: "0.7rem 0.92rem",
         width: "fit-content",
         maxWidth: "75%",
-        boxShadow: "0 8px 20px rgba(17,26,52,0.12)",
+        boxShadow: "0 10px 24px rgba(17,26,52,0.14)",
       }}
     >
       {!sameSender && (
@@ -36,7 +36,11 @@ const MessageComponent = ({ message, user }) => {
         </Typography>
       )}
 
-      {content && <Typography sx={{ wordBreak: "break-word" }}>{content}</Typography>}
+      {content && (
+        <Typography sx={{ wordBreak: "break-word", lineHeight: 1.5 }}>
+          {content}
+        </Typography>
+      )}
 
       {attachments.length > 0 &&
         attachments.map((attachment, index) => {
@@ -65,7 +69,10 @@ const MessageComponent = ({ message, user }) => {
         sx={{
           color: sameSender ? "rgba(255,255,255,0.82)" : "rgba(30,36,56,0.5)",
           display: "block",
-          mt: 0.35,
+          mt: 0.45,
+          textAlign: "right",
+          fontSize: "0.75rem",
+          letterSpacing: "0.1px",
         }}
       >
         {timeAgo}
