@@ -18,12 +18,12 @@ const useAsyncMutation = (mutatationHook) => {
 
   const [mutate] = mutatationHook();
 
-  const executeMutation = async (toastMessage, ...args) => {
+  const executeMutation = async (toastMessage, payload) => {
     setIsLoading(true);
     const toastId = toast.loading(toastMessage || "Updating data...");
 
     try {
-      const res = await mutate(...args);
+      const res = await mutate(payload);
 
       if (res.data) {
         toast.success(res.data.message || "Updated data successfully", {
