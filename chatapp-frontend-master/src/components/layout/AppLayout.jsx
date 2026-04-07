@@ -4,7 +4,7 @@ import {
   Notifications as NotificationsIcon,
   Add as AddIcon,
 } from "@mui/icons-material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -78,8 +78,19 @@ const AppLayout = () => (WrappedComponent) => {
       [ONLINE_USERS]: onlineUsersListener,
     });
 
+    const friendChats = useMemo(
+      () =>
+        (data?.chats || []).filter(
+          (chat) =>
+            chat?.groupChat === false &&
+            Array.isArray(chat?.members) &&
+            chat.members.length > 0
+        ),
+      [data?.chats]
+    );
+
     const chatListProps = {
-      chats: data?.chats,
+      chats: friendChats,
       chatId,
       handleDeleteChat,
       newMessagesAlert,

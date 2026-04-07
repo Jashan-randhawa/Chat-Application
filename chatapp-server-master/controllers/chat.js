@@ -8,6 +8,7 @@ import {
 } from "../utils/features.js";
 import {
   ALERT,
+  MESSAGE_READ,
   NEW_MESSAGE,
   NEW_MESSAGE_ALERT,
   REFETCH_CHATS,
@@ -38,29 +39,29 @@ const newGroupChat = TryCatch(async (req, res, next) => {
 });
 
 const getMyChats = TryCatch(async (req, res, next) => {
-  const chats = await Chat.find({ members: req.user }).populate(
+  const chats = await Chat.find({ members: req.user, groupChat: false }).populate(
     "members",
     "name avatar"
   );
 
-  const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
-    const otherMember = getOtherMember(members, req.user);
+  const transformedChats = chats.map(({ _id, members, groupChat }) => {
+    const safeMembers = Array.isArray(members) ? members : [];
+    const otherMember = getOtherMember(safeMembers, req.user);
+    if (!otherMember) return null;
 
     return {
       _id,
       groupChat,
-      avatar: groupChat
-        ? members.slice(0, 3).map(({ avatar }) => avatar.url)
-        : [otherMember.avatar.url],
-      name: groupChat ? name : otherMember.name,
-      members: members.reduce((prev, curr) => {
+      avatar: [otherMember?.avatar?.url].filter(Boolean),
+      name: otherMember.name,
+      members: safeMembers.reduce((prev, curr) => {
         if (curr._id.toString() !== req.user.toString()) {
           prev.push(curr._id);
         }
         return prev;
       }, []),
     };
-  });
+  }).filter(Boolean);
 
   return res.status(200).json({
     success: true,
@@ -78,8 +79,11 @@ const getMyGroups = TryCatch(async (req, res, next) => {
   const groups = chats.map(({ members, _id, groupChat, name }) => ({
     _id,
     groupChat,
-    name,
-    avatar: members.slice(0, 3).map(({ avatar }) => avatar.url),
+    name: name || "Unnamed Group",
+    avatar: (members || [])
+      .slice(0, 3)
+      .map(({ avatar }) => avatar?.url)
+      .filter(Boolean),
   }));
 
   return res.status(200).json({
@@ -106,7 +110,11 @@ const addMembers = TryCatch(async (req, res, next) => {
   const allNewMembers = await Promise.all(allNewMembersPromise);
 
   const uniqueMembers = allNewMembers
-    .filter((i) => !chat.members.includes(i._id.toString()))
+    .filter(
+      (i) =>
+        i &&
+        !chat.members.some((member) => member.toString() === i._id.toString())
+    )
     .map((i) => i._id);
 
   chat.members.push(...uniqueMembers);
@@ -339,7 +347,10 @@ const deleteChat = TryCatch(async (req, res, next) => {
       new ErrorHandler("You are not allowed to delete the group", 403)
     );
 
-  if (!chat.groupChat && !chat.members.includes(req.user.toString())) {
+  if (
+    !chat.groupChat &&
+    !chat.members.some((member) => member.toString() === req.user.toString())
+  ) {
     return next(
       new ErrorHandler("You are not allowed to delete the chat", 403)
     );
@@ -379,14 +390,17 @@ const getMessages = TryCatch(async (req, res, next) => {
   const resultPerPage = 20;
   const skip = (page - 1) * resultPerPage;
 
-  const chat = await Chat.findById(chatId);
+  const chat = await Chat.findById(chatId).select("members");
 
   if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
-  if (!chat.members.includes(req.user.toString()))
-    return next(
-      new ErrorHandler("You are not allowed to access this chat", 403)
-    );
+  const requesterId = req.user?.toString?.() || `${req.user}`;
+  const isMember = chat.members.some(
+    (member) => (member?._id || member).toString() === requesterId
+  );
+
+  if (!isMember)
+    return next(new ErrorHandler("You are not allowed to access this chat", 403));
 
   const [messages, totalMessagesCount] = await Promise.all([
     Message.find({ chat: chatId })
@@ -407,6 +421,36 @@ const getMessages = TryCatch(async (req, res, next) => {
   });
 });
 
+const markMessageAsRead = TryCatch(async (req, res, next) => {
+  const messageId = req.params.id;
+
+  const message = await Message.findById(messageId).populate("chat", "members");
+
+  if (!message) return next(new ErrorHandler("Message not found", 404));
+
+  const isMember = message.chat.members.some(
+    (member) => member.toString() === req.user.toString()
+  );
+
+  if (!isMember)
+    return next(new ErrorHandler("You are not allowed to access this chat", 403));
+
+  message.deliveredTo.addToSet(req.user);
+  message.readBy.addToSet(req.user);
+  await message.save();
+
+  emitEvent(req, MESSAGE_READ, message.chat.members, {
+    chatId: message.chat._id,
+    messageId: message._id,
+    userId: req.user,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Message marked as read",
+  });
+});
+
 export {
   newGroupChat,
   getMyChats,
@@ -419,4 +463,5 @@ export {
   renameGroup,
   deleteChat,
   getMessages,
+  markMessageAsRead,
 };
