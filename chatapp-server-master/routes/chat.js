@@ -7,6 +7,7 @@ import {
   getMyChats,
   getMyGroups,
   leaveGroup,
+  markMessageAsRead,
   newGroupChat,
   removeMember,
   renameGroup,
@@ -15,6 +16,7 @@ import {
 import {
   addMemberValidator,
   chatIdValidator,
+  messageIdValidator,
   newGroupValidator,
   removeMemberValidator,
   renameValidator,
@@ -58,6 +60,12 @@ app.post(
 
 // Get Messages
 app.get("/message/:id", chatIdValidator(), validateHandler, getMessages);
+app.put(
+  "/message/:id/read",
+  messageIdValidator(),
+  validateHandler,
+  markMessageAsRead
+);
 
 // Get Chat Details, rename,delete
 app
