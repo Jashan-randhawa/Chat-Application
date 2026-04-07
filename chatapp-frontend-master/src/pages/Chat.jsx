@@ -6,6 +6,7 @@ import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
   Mic as MicIcon,
+  Stop as StopIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { InputBox } from "../components/styles/StyledComponents";
@@ -15,7 +16,7 @@ import { getSocket } from "../socket";
 import {
   ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_DELIVERED, MESSAGE_READ, NEW_MESSAGE, START_TYPING, STOP_TYPING,
 } from "../constants/events";
-import { useChatDetailsQuery, useGetMessagesQuery, useMarkMessageReadMutation } from "../redux/api/api";
+import { useChatDetailsQuery, useGetMessagesQuery, useMarkMessageReadMutation, useSendAttachmentsMutation } from "../redux/api/api";
 import { useErrors, useSocketEvents } from "../hooks/hook";
 import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
@@ -23,6 +24,7 @@ import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
 import { TypingLoader } from "../components/layout/Loaders";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const Chat = ({ chatId, user, onBack, isMobile }) => {
   const socket = getSocket();
@@ -40,7 +42,14 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const [userTyping, setUserTyping] = useState(false);
   const typingTimeout = useRef(null);
   const readReceiptQueueRef = useRef(new Set());
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioStreamRef = useRef(null);
+  const recordingIntervalRef = useRef(null);
   const [markMessageRead] = useMarkMessageReadMutation();
+  const [sendAttachments] = useSendAttachmentsMutation();
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   const chatDetails = useChatDetailsQuery({ chatId, populate: true, skip: !chatId });
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
@@ -89,6 +98,87 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
     if (!message.trim()) return;
     socket.emit(NEW_MESSAGE, { chatId, members, message });
     setMessage("");
+  };
+
+  const stopAudioStream = () => {
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+  };
+
+  const stopRecordingTimer = () => {
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+  };
+
+  const uploadVoiceNote = async (audioBlob) => {
+    const myForm = new FormData();
+    myForm.append("chatId", chatId);
+    myForm.append("files", audioBlob, `voice-note-${Date.now()}.webm`);
+
+    const toastId = toast.loading("Sending voice note...");
+    const res = await sendAttachments(myForm);
+    if (res?.data?.success) toast.success("Voice note sent", { id: toastId });
+    else toast.error("Failed to send voice note", { id: toastId });
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia)
+        return toast.error("Voice recording is not supported on this browser.");
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+
+      audioChunksRef.current = [];
+      audioStreamRef.current = stream;
+      mediaRecorderRef.current = mediaRecorder;
+      setRecordingSeconds(0);
+      setIsRecording(true);
+
+      recordingIntervalRef.current = setInterval(
+        () => setRecordingSeconds((prev) => prev + 1),
+        1000
+      );
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: "audio/webm",
+          });
+          if (audioBlob.size > 0) await uploadVoiceNote(audioBlob);
+        } catch (error) {
+          toast.error("Failed to process voice note.");
+        } finally {
+          audioChunksRef.current = [];
+          stopAudioStream();
+          stopRecordingTimer();
+          setIsRecording(false);
+          setRecordingSeconds(0);
+        }
+      };
+
+      mediaRecorder.start();
+    } catch (error) {
+      stopAudioStream();
+      stopRecordingTimer();
+      setIsRecording(false);
+      setRecordingSeconds(0);
+      toast.error("Microphone permission denied.");
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
   };
 
   const addUniqueUsers = (existingUsers = [], usersToAdd = []) => {
@@ -211,6 +301,14 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
       });
     });
   }, [allMessages, markMessageRead, user?._id]);
+
+  useEffect(
+    () => () => {
+      stopRecordingTimer();
+      stopAudioStream();
+    },
+    []
+  );
 
   // Empty state (no chat selected — desktop only, mobile never shows this)
   if (!chatId) {
@@ -377,12 +475,18 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
 
         {/* Send / Mic */}
         <Box
-          component={message.trim() ? "button" : "div"}
-          onClick={message.trim() ? submitHandler : undefined}
+          component={message.trim() || isRecording ? "button" : "div"}
+          onClick={
+            message.trim()
+              ? submitHandler
+              : isRecording
+                ? stopVoiceRecording
+                : startVoiceRecording
+          }
           sx={{
             width: 44, height: 44,
             borderRadius: "50%",
-            bgcolor: "#00a884",
+            bgcolor: isRecording ? "#f15c6d" : "#00a884",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
             border: "none",
@@ -395,9 +499,16 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
         >
           {message.trim()
             ? <SendIcon sx={{ fontSize: 20, color: "white", ml: "2px" }} />
-            : <MicIcon sx={{ fontSize: 20, color: "white" }} />
+            : isRecording
+              ? <StopIcon sx={{ fontSize: 20, color: "white" }} />
+              : <MicIcon sx={{ fontSize: 20, color: "white" }} />
           }
         </Box>
+        {isRecording && (
+          <Typography sx={{ fontSize: "0.75rem", color: "#f15c6d", minWidth: "3rem" }}>
+            {`0:${String(recordingSeconds).padStart(2, "0")}`}
+          </Typography>
+        )}
       </Box>
 
       <FileMenu anchorE1={fileMenuAnchor} chatId={chatId} />
