@@ -165,6 +165,11 @@ npm run dev
 4. Add all environment variables
 5. Deploy
 
+### Deployment Troubleshooting
+- If you see `Uncaught SyntaxError: Unexpected token '<'` on Vercel, ensure frontend deploys from `chatapp-frontend-master` (this folder already includes `vercel.json` SPA fallback).
+- Set frontend env `VITE_SERVER` to your Railway backend URL, e.g. `https://chat-application-production-aa42.up.railway.app` (trailing slash is automatically trimmed by frontend config).
+- For backend CORS/socket access, set `CLIENT_URL` (or `CLIENT_URLS` as comma-separated origins) to include your frontend domain, e.g. `CLIENT_URL=https://chat-application-rho-mauve.vercel.app`.
+
 ---
 
 ## 🛠️ Tech Stack
