@@ -1,4 +1,5 @@
 import { compare } from "bcrypt";
+import mongoose from "mongoose";
 import { NEW_REQUEST, REFETCH_CHATS } from "../constants/events.js";
 import { getOtherMember } from "../lib/helper.js";
 import { TryCatch } from "../middlewares/error.js";
@@ -193,7 +194,7 @@ const getMyNotifications = TryCatch(async (req, res) => {
   });
 });
 
-const getMyFriends = TryCatch(async (req, res) => {
+const getMyFriends = TryCatch(async (req, res, next) => {
   const chatId = req.query.chatId;
 
   const chats = await Chat.find({
@@ -203,16 +204,21 @@ const getMyFriends = TryCatch(async (req, res) => {
 
   const friends = chats.map(({ members }) => {
     const otherUser = getOtherMember(members, req.user);
+    if (!otherUser) return null;
 
     return {
       _id: otherUser._id,
       name: otherUser.name,
       avatar: otherUser.avatar.url,
     };
-  });
+  }).filter(Boolean);
 
   if (chatId) {
+    if (!mongoose.isValidObjectId(chatId))
+      return next(new ErrorHandler("Invalid Chat ID", 400));
+
     const chat = await Chat.findById(chatId);
+    if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
     const availableFriends = friends.filter(
       (friend) =>

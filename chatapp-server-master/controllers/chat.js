@@ -387,14 +387,17 @@ const getMessages = TryCatch(async (req, res, next) => {
   const resultPerPage = 20;
   const skip = (page - 1) * resultPerPage;
 
-  const chat = await Chat.findById(chatId);
+  const chat = await Chat.findById(chatId).select("members");
 
   if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
-  if (!chat.members.some((member) => member.toString() === req.user.toString()))
-    return next(
-      new ErrorHandler("You are not allowed to access this chat", 403)
-    );
+  const requesterId = req.user?.toString?.() || `${req.user}`;
+  const isMember = chat.members.some(
+    (member) => (member?._id || member).toString() === requesterId
+  );
+
+  if (!isMember)
+    return next(new ErrorHandler("You are not allowed to access this chat", 403));
 
   const [messages, totalMessagesCount] = await Promise.all([
     Message.find({ chat: chatId })
