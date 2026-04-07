@@ -1,4 +1,10 @@
-import { Drawer, Grid, Skeleton } from "@mui/material";
+// ============================================================
+// REDESIGNED AppLayout — dark sidebar + clean chat area
+// Changes: dark sidebar with glass effect, refined grid layout,
+//          improved drawer for mobile, better profile panel
+// ============================================================
+
+import { Drawer, Grid, Skeleton, Box } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -36,7 +42,6 @@ const AppLayout = () => (WrappedComponent) => {
 
     const chatId = params.chatId;
     const deleteMenuAnchor = useRef(null);
-
     const [onlineUsers, setOnlineUsers] = useState([]);
 
     const { isMobile } = useSelector((state) => state.misc);
@@ -94,17 +99,26 @@ const AppLayout = () => (WrappedComponent) => {
         <Title />
         <Header />
 
-        <DeleteChatMenu
-          dispatch={dispatch}
-          deleteMenuAnchor={deleteMenuAnchor}
-        />
+        <DeleteChatMenu dispatch={dispatch} deleteMenuAnchor={deleteMenuAnchor} />
 
+        {/* Mobile drawer */}
         {isLoading ? (
           <Skeleton />
         ) : (
-          <Drawer open={isMobile} onClose={handleMobileClose}>
+          <Drawer
+            open={isMobile}
+            onClose={handleMobileClose}
+            PaperProps={{
+              sx: {
+                background: "linear-gradient(180deg, #0f172a 0%, #1a2744 100%)",
+                borderRight: "1px solid rgba(255,255,255,0.06)",
+                width: "78vw",
+                maxWidth: 320,
+              },
+            }}
+          >
             <ChatList
-              w="70vw"
+              w="100%"
               chats={data?.chats}
               chatId={chatId}
               handleDeleteChat={handleDeleteChat}
@@ -114,18 +128,21 @@ const AppLayout = () => (WrappedComponent) => {
           </Drawer>
         )}
 
-        <Grid container height={"calc(100vh - 4rem)"}>
+        <Grid container height={"calc(100vh - 4rem)"} sx={{ overflow: "hidden" }}>
+          {/* Sidebar — chat list */}
           <Grid
             item
             sm={4}
             md={3}
             sx={{
               display: { xs: "none", sm: "block" },
+              background: "linear-gradient(180deg, #0f172a 0%, #1a2744 100%)",
+              borderRight: "1px solid rgba(255,255,255,0.05)",
             }}
             height={"100%"}
           >
             {isLoading ? (
-              <Skeleton />
+              <ChatListSkeleton />
             ) : (
               <ChatList
                 chats={data?.chats}
@@ -136,10 +153,21 @@ const AppLayout = () => (WrappedComponent) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} sm={8} md={5} lg={6} height={"100%"}>
+
+          {/* Main chat area */}
+          <Grid
+            item
+            xs={12}
+            sm={8}
+            md={5}
+            lg={6}
+            height={"100%"}
+            sx={{ bgcolor: "#f0f2f5" }}
+          >
             <WrappedComponent {...props} chatId={chatId} user={user} />
           </Grid>
 
+          {/* Profile panel */}
           <Grid
             item
             md={4}
@@ -147,8 +175,9 @@ const AppLayout = () => (WrappedComponent) => {
             height={"100%"}
             sx={{
               display: { xs: "none", md: "block" },
-              padding: "2rem",
-              bgcolor: "rgba(0,0,0,0.85)",
+              background: "linear-gradient(180deg, #0f172a 0%, #0d1f3c 100%)",
+              borderLeft: "1px solid rgba(255,255,255,0.05)",
+              overflowY: "auto",
             }}
           >
             <Profile user={user} />
@@ -158,5 +187,20 @@ const AppLayout = () => (WrappedComponent) => {
     );
   };
 };
+
+// Skeleton loader for chat list
+const ChatListSkeleton = () => (
+  <Box p={2} display="flex" flexDirection="column" gap={1.5}>
+    {Array.from({ length: 8 }).map((_, i) => (
+      <Box key={i} display="flex" alignItems="center" gap={1.5} p={1}>
+        <Skeleton variant="circular" width={48} height={48} sx={{ bgcolor: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+        <Box flex={1}>
+          <Skeleton variant="text" width="60%" height={16} sx={{ bgcolor: "rgba(255,255,255,0.07)", mb: 0.5 }} />
+          <Skeleton variant="text" width="40%" height={12} sx={{ bgcolor: "rgba(255,255,255,0.05)" }} />
+        </Box>
+      </Box>
+    ))}
+  </Box>
+);
 
 export default AppLayout;

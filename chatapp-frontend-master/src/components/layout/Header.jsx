@@ -1,3 +1,9 @@
+// ============================================================
+// REDESIGNED Header — dark premium nav bar
+// Changes: dark bg, logo with icon, glass-morphism effect,
+//          smooth hover states on icon buttons
+// ============================================================
+
 import {
   AppBar,
   Backdrop,
@@ -17,6 +23,7 @@ import {
   Group as GroupIcon,
   Logout as LogoutIcon,
   Notifications as NotificationsIcon,
+  ChatBubble as ChatBubbleIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -46,18 +53,12 @@ const Header = () => {
   const { notificationCount } = useSelector((state) => state.chat);
 
   const handleMobile = () => dispatch(setIsMobile(true));
-
   const openSearch = () => dispatch(setIsSearch(true));
-
-  const openNewGroup = () => {
-    dispatch(setIsNewGroup(true));
-  };
-
+  const openNewGroup = () => dispatch(setIsNewGroup(true));
   const openNotification = () => {
     dispatch(setIsNotification(true));
     dispatch(resetNotificationCount());
   };
-
   const navigateToGroup = () => navigate("/groups");
 
   const logoutHandler = async () => {
@@ -77,65 +78,88 @@ const Header = () => {
       <Box sx={{ flexGrow: 1 }} height={"4rem"}>
         <AppBar
           position="static"
+          elevation={0}
           sx={{
-            bgcolor: orange,
+            // Dark glass-morphism header
+            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            backdropFilter: "blur(10px)",
           }}
         >
-          <Toolbar>
-            <Typography
-              variant="h6"
-              sx={{
-                display: { xs: "none", sm: "block" },
-              }}
-            >
-              Echo Chat
-            </Typography>
-
+          <Toolbar sx={{ gap: 1 }}>
+            {/* Logo */}
             <Box
               sx={{
-                display: { xs: "block", sm: "none" },
+                display: { xs: "none", sm: "flex" },
+                alignItems: "center",
+                gap: 1,
               }}
             >
-              <IconButton color="inherit" onClick={handleMobile}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(14,165,233,0.4)",
+                }}
+              >
+                <ChatBubbleIcon sx={{ fontSize: 16, color: "white" }} />
+              </Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "1.1rem",
+                  letterSpacing: "-0.02em",
+                  background: "linear-gradient(135deg, #e2e8f0, #94a3b8)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Echo
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  Chat
+                </span>
+              </Typography>
+            </Box>
+
+            {/* Mobile menu button */}
+            <Box sx={{ display: { xs: "block", sm: "none" } }}>
+              <IconButton
+                sx={{
+                  color: "rgba(255,255,255,0.7)",
+                  "&:hover": { color: "white", bgcolor: "rgba(255,255,255,0.08)" },
+                }}
+                onClick={handleMobile}
+              >
                 <MenuIcon />
               </IconButton>
             </Box>
-            <Box
-              sx={{
-                flexGrow: 1,
-              }}
-            />
-            <Box>
-              <IconBtn
-                title={"Search"}
-                icon={<SearchIcon />}
-                onClick={openSearch}
-              />
 
-              <IconBtn
-                title={"New Group"}
-                icon={<AddIcon />}
-                onClick={openNewGroup}
-              />
+            <Box sx={{ flexGrow: 1 }} />
 
-              <IconBtn
-                title={"Manage Groups"}
-                icon={<GroupIcon />}
-                onClick={navigateToGroup}
-              />
-
+            {/* Action icons */}
+            <Box sx={{ display: "flex", gap: 0.5 }}>
+              <IconBtn title={"Search"} icon={<SearchIcon />} onClick={openSearch} />
+              <IconBtn title={"New Group"} icon={<AddIcon />} onClick={openNewGroup} />
+              <IconBtn title={"Manage Groups"} icon={<GroupIcon />} onClick={navigateToGroup} />
               <IconBtn
                 title={"Notifications"}
                 icon={<NotificationsIcon />}
                 onClick={openNotification}
                 value={notificationCount}
               />
-
-              <IconBtn
-                title={"Logout"}
-                icon={<LogoutIcon />}
-                onClick={logoutHandler}
-              />
+              <IconBtn title={"Logout"} icon={<LogoutIcon />} onClick={logoutHandler} />
             </Box>
           </Toolbar>
         </AppBar>
@@ -146,13 +170,11 @@ const Header = () => {
           <SearchDialog />
         </Suspense>
       )}
-
       {isNotification && (
         <Suspense fallback={<Backdrop open />}>
           <NotifcationDialog />
         </Suspense>
       )}
-
       {isNewGroup && (
         <Suspense fallback={<Backdrop open />}>
           <NewGroupDialog />
@@ -164,10 +186,36 @@ const Header = () => {
 
 const IconBtn = ({ title, icon, onClick, value }) => {
   return (
-    <Tooltip title={title}>
-      <IconButton color="inherit" size="large" onClick={onClick}>
+    <Tooltip title={title} arrow>
+      <IconButton
+        size="medium"
+        onClick={onClick}
+        sx={{
+          color: "rgba(255,255,255,0.65)",
+          borderRadius: "10px",
+          transition: "all 0.2s ease",
+          "&:hover": {
+            color: "white",
+            bgcolor: "rgba(14,165,233,0.15)",
+            transform: "translateY(-1px)",
+          },
+        }}
+      >
         {value ? (
-          <Badge badgeContent={value} color="error">
+          <Badge
+            badgeContent={value}
+            sx={{
+              "& .MuiBadge-badge": {
+                background: "linear-gradient(135deg, #f43f5e, #e11d48)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: "0.65rem",
+                minWidth: 16,
+                height: 16,
+                borderRadius: "8px",
+              },
+            }}
+          >
             {icon}
           </Badge>
         ) : (
