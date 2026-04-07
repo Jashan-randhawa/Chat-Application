@@ -28,6 +28,7 @@ const App = () => {
   const { user, loader } = useSelector((state) => state.auth);
 
   const dispatch = useDispatch();
+  const protectedRoutesElement = <ProtectRoute user={user} />;
 
   useEffect(() => {
     axios
@@ -44,9 +45,11 @@ const App = () => {
         <Routes>
           <Route
             element={
-              <SocketProvider>
-                <ProtectRoute user={user} />
-              </SocketProvider>
+              user ? (
+                <SocketProvider>{protectedRoutesElement}</SocketProvider>
+              ) : (
+                protectedRoutesElement
+              )
             }
           >
             <Route path="/" element={<Home />} />
