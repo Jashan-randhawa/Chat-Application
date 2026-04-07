@@ -45,16 +45,22 @@ const getMyChats = TryCatch(async (req, res, next) => {
   );
 
   const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
-    const otherMember = getOtherMember(members, req.user);
+    const safeMembers = Array.isArray(members) ? members : [];
+    const otherMember = getOtherMember(safeMembers, req.user);
+    const fallbackName = otherMember?.name || name || "Unknown Chat";
+    const fallbackAvatar = otherMember?.avatar?.url || "";
 
     return {
       _id,
       groupChat,
       avatar: groupChat
-        ? members.slice(0, 3).map(({ avatar }) => avatar.url)
-        : [otherMember.avatar.url],
-      name: groupChat ? name : otherMember.name,
-      members: members.reduce((prev, curr) => {
+        ? safeMembers
+            .slice(0, 3)
+            .map(({ avatar }) => avatar?.url)
+            .filter(Boolean)
+        : [fallbackAvatar].filter(Boolean),
+      name: groupChat ? name || "Unnamed Group" : fallbackName,
+      members: safeMembers.reduce((prev, curr) => {
         if (curr._id.toString() !== req.user.toString()) {
           prev.push(curr._id);
         }
@@ -79,8 +85,11 @@ const getMyGroups = TryCatch(async (req, res, next) => {
   const groups = chats.map(({ members, _id, groupChat, name }) => ({
     _id,
     groupChat,
-    name,
-    avatar: members.slice(0, 3).map(({ avatar }) => avatar.url),
+    name: name || "Unnamed Group",
+    avatar: (members || [])
+      .slice(0, 3)
+      .map(({ avatar }) => avatar?.url)
+      .filter(Boolean),
   }));
 
   return res.status(200).json({
