@@ -1,31 +1,15 @@
-// ============================================================
-// REDESIGNED AppLayout — dark sidebar + clean chat area
-// Changes: dark sidebar with glass effect, refined grid layout,
-//          improved drawer for mobile, better profile panel
-// ============================================================
-
 import { Drawer, Grid, Skeleton, Box } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  NEW_MESSAGE_ALERT,
-  NEW_REQUEST,
-  ONLINE_USERS,
-  REFETCH_CHATS,
+  NEW_MESSAGE_ALERT, NEW_REQUEST, ONLINE_USERS, REFETCH_CHATS,
 } from "../../constants/events";
 import { useErrors, useSocketEvents } from "../../hooks/hook";
 import { getOrSaveFromStorage } from "../../lib/features";
 import { useMyChatsQuery } from "../../redux/api/api";
-import {
-  incrementNotification,
-  setNewMessagesAlert,
-} from "../../redux/reducers/chat";
-import {
-  setIsDeleteMenu,
-  setIsMobile,
-  setSelectedDeleteChat,
-} from "../../redux/reducers/misc";
+import { incrementNotification, setNewMessagesAlert } from "../../redux/reducers/chat";
+import { setIsDeleteMenu, setIsMobile, setSelectedDeleteChat } from "../../redux/reducers/misc";
 import { getSocket } from "../../socket";
 import DeleteChatMenu from "../dialogs/DeleteChatMenu";
 import Title from "../shared/Title";
@@ -64,13 +48,10 @@ const AppLayout = () => (WrappedComponent) => {
 
     const handleMobileClose = () => dispatch(setIsMobile(false));
 
-    const newMessageAlertListener = useCallback(
-      (data) => {
-        if (data.chatId === chatId) return;
-        dispatch(setNewMessagesAlert(data));
-      },
-      [chatId]
-    );
+    const newMessageAlertListener = useCallback((data) => {
+      if (data.chatId === chatId) return;
+      dispatch(setNewMessagesAlert(data));
+    }, [chatId]);
 
     const newRequestListener = useCallback(() => {
       dispatch(incrementNotification());
@@ -98,22 +79,19 @@ const AppLayout = () => (WrappedComponent) => {
       <>
         <Title />
         <Header />
-
         <DeleteChatMenu dispatch={dispatch} deleteMenuAnchor={deleteMenuAnchor} />
 
-        {/* Mobile drawer */}
-        {isLoading ? (
-          <Skeleton />
-        ) : (
+        {/* Mobile drawer - WhatsApp style */}
+        {isLoading ? <Skeleton /> : (
           <Drawer
             open={isMobile}
             onClose={handleMobileClose}
             PaperProps={{
               sx: {
-                background: "linear-gradient(180deg, #0f172a 0%, #1a2744 100%)",
-                borderRight: "1px solid rgba(255,255,255,0.06)",
-                width: "78vw",
-                maxWidth: 320,
+                bgcolor: "#ffffff",
+                borderRight: "none",
+                width: "85vw",
+                maxWidth: 340,
               },
             }}
           >
@@ -128,22 +106,18 @@ const AppLayout = () => (WrappedComponent) => {
           </Drawer>
         )}
 
-        <Grid container height={"calc(100vh - 4rem)"} sx={{ overflow: "hidden" }}>
-          {/* Sidebar — chat list */}
+        <Grid container height={"calc(100vh - 3.75rem)"} sx={{ overflow: "hidden" }}>
+          {/* Sidebar — WhatsApp left panel */}
           <Grid
-            item
-            sm={4}
-            md={3}
+            item sm={4} md={3}
             sx={{
               display: { xs: "none", sm: "block" },
-              background: "linear-gradient(180deg, #0f172a 0%, #1a2744 100%)",
-              borderRight: "1px solid rgba(255,255,255,0.05)",
+              bgcolor: "#ffffff",
+              borderRight: "1px solid #e9edef",
             }}
             height={"100%"}
           >
-            {isLoading ? (
-              <ChatListSkeleton />
-            ) : (
+            {isLoading ? <ChatListSkeleton /> : (
               <ChatList
                 chats={data?.chats}
                 chatId={chatId}
@@ -156,27 +130,21 @@ const AppLayout = () => (WrappedComponent) => {
 
           {/* Main chat area */}
           <Grid
-            item
-            xs={12}
-            sm={8}
-            md={5}
-            lg={6}
+            item xs={12} sm={8} md={5} lg={6}
             height={"100%"}
-            sx={{ bgcolor: "#f0f2f5" }}
+            sx={{ bgcolor: "#efeae2", display: "flex", flexDirection: "column" }}
           >
             <WrappedComponent {...props} chatId={chatId} user={user} />
           </Grid>
 
           {/* Profile panel */}
           <Grid
-            item
-            md={4}
-            lg={3}
+            item md={4} lg={3}
             height={"100%"}
             sx={{
               display: { xs: "none", md: "block" },
-              background: "linear-gradient(180deg, #0f172a 0%, #0d1f3c 100%)",
-              borderLeft: "1px solid rgba(255,255,255,0.05)",
+              bgcolor: "#ffffff",
+              borderLeft: "1px solid #e9edef",
               overflowY: "auto",
             }}
           >
@@ -188,15 +156,24 @@ const AppLayout = () => (WrappedComponent) => {
   };
 };
 
-// Skeleton loader for chat list
 const ChatListSkeleton = () => (
-  <Box p={2} display="flex" flexDirection="column" gap={1.5}>
-    {Array.from({ length: 8 }).map((_, i) => (
-      <Box key={i} display="flex" alignItems="center" gap={1.5} p={1}>
-        <Skeleton variant="circular" width={48} height={48} sx={{ bgcolor: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+  <Box>
+    {/* Search bar skeleton */}
+    <Box sx={{ p: 1.5, bgcolor: "#f0f2f5" }}>
+      <Skeleton variant="rounded" height={38} sx={{ borderRadius: "8px", bgcolor: "#e9edef" }} />
+    </Box>
+    {/* Chat items */}
+    {Array.from({ length: 9 }).map((_, i) => (
+      <Box key={i} display="flex" alignItems="center" gap={1.5} px={2} py={1.5}
+        sx={{ borderBottom: "1px solid #f5f6f6" }}
+      >
+        <Skeleton variant="circular" width={50} height={50} sx={{ bgcolor: "#e9edef", flexShrink: 0 }} />
         <Box flex={1}>
-          <Skeleton variant="text" width="60%" height={16} sx={{ bgcolor: "rgba(255,255,255,0.07)", mb: 0.5 }} />
-          <Skeleton variant="text" width="40%" height={12} sx={{ bgcolor: "rgba(255,255,255,0.05)" }} />
+          <Box display="flex" justifyContent="space-between" mb={0.5}>
+            <Skeleton variant="text" width="50%" height={14} sx={{ bgcolor: "#e9edef" }} />
+            <Skeleton variant="text" width="20%" height={12} sx={{ bgcolor: "#e9edef" }} />
+          </Box>
+          <Skeleton variant="text" width="70%" height={12} sx={{ bgcolor: "#f5f6f6" }} />
         </Box>
       </Box>
     ))}

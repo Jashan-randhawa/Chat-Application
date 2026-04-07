@@ -1,39 +1,23 @@
-// ============================================================
-// REDESIGNED Search dialog — modern floating search panel
-// Changes: dark-themed dialog, pill search input, user results
-//          with avatar, smooth entry animation
-// ============================================================
-
 import { useInputValidation } from "6pp";
 import { Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material";
 import {
-  Dialog,
-  DialogTitle,
-  InputAdornment,
-  List,
-  Stack,
-  TextField,
-  IconButton,
-  Box,
-  Typography,
+  Dialog, DialogTitle, List, Stack, TextField,
+  IconButton, Box, Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useAsyncMutation } from "../../hooks/hook";
-import {
-  useLazySearchUserQuery,
-  useSendFriendRequestMutation,
-} from "../../redux/api/api";
+import { useLazySearchUserQuery, useSendFriendRequestMutation } from "../../redux/api/api";
 import { setIsSearch } from "../../redux/reducers/misc";
 import UserItem from "../shared/UserItem";
 
 const Search = () => {
   const { isSearch } = useSelector((state) => state.misc);
-  const [searchUser] = useLazySearchUserQuery();
-  const [sendFriendRequest, isLoadingSendFriendRequest] = useAsyncMutation(
-    useSendFriendRequestMutation
-  );
   const dispatch = useDispatch();
+
+  const [searchUser] = useLazySearchUserQuery();
+  const [sendFriendRequest, isLoadingSendFriendRequest] = useAsyncMutation(useSendFriendRequestMutation);
+
   const search = useInputValidation("");
   const [users, setUsers] = useState([]);
 
@@ -44,12 +28,12 @@ const Search = () => {
   const searchCloseHandler = () => dispatch(setIsSearch(false));
 
   useEffect(() => {
-    const timeOutId = setTimeout(() => {
+    const timeout = setTimeout(() => {
       searchUser(search.value)
-        .then(({ data }) => setUsers(data.users))
-        .catch((e) => console.log(e));
-    }, 1000);
-    return () => clearTimeout(timeOutId);
+        .then(({ data }) => setUsers(data?.users || []))
+        .catch(console.error);
+    }, 300);
+    return () => clearTimeout(timeout);
   }, [search.value]);
 
   return (
@@ -58,91 +42,70 @@ const Search = () => {
       onClose={searchCloseHandler}
       PaperProps={{
         sx: {
-          borderRadius: "20px",
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
-          minWidth: { xs: "90vw", sm: "400px" },
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: 420,
           overflow: "hidden",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
         },
       }}
     >
-      <Stack p={"1.5rem"} direction={"column"} spacing={2}>
-        {/* Header */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              color: "#f1f5f9",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Find People
+      {/* WA-style green header */}
+      <Box sx={{ bgcolor: "#008069", px: 2.5, py: 2 }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography sx={{
+            color: "white", fontWeight: 600, fontSize: "1rem",
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+          }}>
+            New Chat
           </Typography>
-          <IconButton
-            onClick={searchCloseHandler}
-            size="small"
-            sx={{
-              color: "rgba(148,163,184,0.6)",
-              "&:hover": { color: "#f1f5f9", bgcolor: "rgba(255,255,255,0.06)" },
-            }}
+          <IconButton onClick={searchCloseHandler} size="small"
+            sx={{ color: "rgba(255,255,255,0.8)", "&:hover": { color: "white" } }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>
-        </Stack>
-
+        </Box>
         {/* Search input */}
-        <TextField
-          placeholder="Search by name or username..."
-          value={search.value}
-          onChange={search.changeHandler}
-          variant="outlined"
-          size="small"
-          autoFocus
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "rgba(148,163,184,0.5)", fontSize: 18 }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              borderRadius: "12px",
-              bgcolor: "rgba(255,255,255,0.05)",
-              color: "#f1f5f9",
-              "& fieldset": { borderColor: "rgba(255,255,255,0.1)" },
-              "&:hover fieldset": { borderColor: "rgba(14,165,233,0.4)" },
-              "&.Mui-focused fieldset": { borderColor: "#0ea5e9" },
-            },
-            "& input::placeholder": { color: "rgba(148,163,184,0.5)", fontSize: "0.88rem" },
-            "& input": { color: "#f1f5f9", fontSize: "0.9rem" },
-          }}
-        />
-
-        {/* Results */}
-        <List disablePadding sx={{ maxHeight: 320, overflowY: "auto",
-          "&::-webkit-scrollbar": { width: 4 },
-          "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(255,255,255,0.1)", borderRadius: 4 },
+        <Box sx={{
+          mt: 1.5, bgcolor: "rgba(255,255,255,0.15)",
+          borderRadius: "8px", display: "flex", alignItems: "center", px: 1.5, py: 0.75,
         }}>
-          {users.length === 0 && search.value && (
-            <Box sx={{ py: 3, textAlign: "center" }}>
-              <Typography sx={{ color: "rgba(148,163,184,0.5)", fontSize: "0.85rem" }}>
-                No users found for "{search.value}"
-              </Typography>
-            </Box>
-          )}
-          {users.map((i) => (
-            <UserItem
-              user={i}
-              key={i._id}
-              handler={addFriendHandler}
-              handlerIsLoading={isLoadingSendFriendRequest}
-            />
-          ))}
-        </List>
-      </Stack>
+          <SearchIcon sx={{ color: "rgba(255,255,255,0.8)", fontSize: 18, mr: 1, flexShrink: 0 }} />
+          <input
+            placeholder="Search name or number"
+            value={search.value}
+            onChange={search.changeHandler}
+            style={{
+              border: "none", outline: "none", background: "transparent",
+              color: "white", fontSize: "0.9rem", width: "100%",
+              fontFamily: "'Segoe UI', system-ui, sans-serif",
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* Results */}
+      <Box sx={{ maxHeight: 380, overflowY: "auto" }}>
+        {users.length === 0 ? (
+          <Box sx={{ py: 5, textAlign: "center" }}>
+            <Typography sx={{ color: "#8696a0", fontSize: "0.875rem",
+              fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+              {search.value ? "No contacts found" : "Search for contacts to chat"}
+            </Typography>
+          </Box>
+        ) : (
+          <List disablePadding>
+            {users.map((user) => (
+              <UserItem
+                user={user}
+                key={user._id}
+                handler={addFriendHandler}
+                handlerIsLoading={isLoadingSendFriendRequest}
+              />
+            ))}
+          </List>
+        )}
+      </Box>
     </Dialog>
   );
 };

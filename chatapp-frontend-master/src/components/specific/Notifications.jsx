@@ -1,34 +1,16 @@
-// ============================================================
-// REDESIGNED Notifications dialog — dark themed, polished
-// Changes: gradient avatar ring, accept/reject styled buttons,
-//          empty state, smooth request items
-// ============================================================
-
 import {
-  Avatar,
-  Button,
-  Dialog,
-  DialogTitle,
-  ListItem,
-  Skeleton,
-  Stack,
-  Box,
-  Typography,
-  IconButton,
+  Avatar, Button, Dialog, DialogTitle, ListItem, Skeleton,
+  Stack, Box, Typography, IconButton,
 } from "@mui/material";
 import {
   NotificationsNone as NotificationsNoneIcon,
   Close as CloseIcon,
   Check as CheckIcon,
-  Close as RejectIcon,
 } from "@mui/icons-material";
 import React, { memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useAsyncMutation, useErrors } from "../../hooks/hook";
-import {
-  useAcceptFriendRequestMutation,
-  useGetNotificationsQuery,
-} from "../../redux/api/api";
+import { useAcceptFriendRequestMutation, useGetNotificationsQuery } from "../../redux/api/api";
 import { setIsNotification } from "../../redux/reducers/misc";
 import { transformImage } from "../../lib/features";
 
@@ -52,66 +34,60 @@ const Notifications = () => {
       onClose={closeHandler}
       PaperProps={{
         sx: {
-          borderRadius: "20px",
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
-          minWidth: { xs: "90vw", sm: "420px" },
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: 420,
           overflow: "hidden",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
         },
       }}
     >
-      <Stack p={"1.5rem"} spacing={2}>
-        {/* Header */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#f1f5f9", letterSpacing: "-0.02em" }}>
-            Notifications
-          </Typography>
-          <IconButton
-            onClick={closeHandler}
-            size="small"
-            sx={{ color: "rgba(148,163,184,0.6)", "&:hover": { color: "#f1f5f9", bgcolor: "rgba(255,255,255,0.06)" } }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </Stack>
-
-        {/* Content */}
-        <Box sx={{ maxHeight: 400, overflowY: "auto",
-          "&::-webkit-scrollbar": { width: 4 },
-          "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(255,255,255,0.1)", borderRadius: 4 },
+      {/* WA-style header */}
+      <Box sx={{ bgcolor: "#008069", px: 2.5, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography sx={{
+          color: "white", fontWeight: 600, fontSize: "1rem",
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
         }}>
-          {isLoading ? (
-            <Stack spacing={1.5} p={1}>
-              {[1,2,3].map(i => (
-                <Box key={i} sx={{ display:"flex", alignItems:"center", gap:1.5 }}>
-                  <Skeleton variant="circular" width={44} height={44} sx={{ bgcolor:"rgba(255,255,255,0.07)" }} />
-                  <Box flex={1}>
-                    <Skeleton variant="text" width="70%" sx={{ bgcolor:"rgba(255,255,255,0.07)" }} />
-                    <Skeleton variant="text" width="40%" sx={{ bgcolor:"rgba(255,255,255,0.05)" }} />
-                  </Box>
+          Notifications
+        </Typography>
+        <IconButton onClick={closeHandler} size="small"
+          sx={{ color: "rgba(255,255,255,0.8)", "&:hover": { color: "white" } }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
+
+      {/* Content */}
+      <Box sx={{
+        maxHeight: 400, overflowY: "auto",
+        "&::-webkit-scrollbar": { width: 4 },
+        "&::-webkit-scrollbar-thumb": { bgcolor: "#d1d7db", borderRadius: 4 },
+      }}>
+        {isLoading ? (
+          <Stack spacing={0}>
+            {[1, 2, 3].map(i => (
+              <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5, borderBottom: "1px solid #f5f6f6" }}>
+                <Skeleton variant="circular" width={46} height={46} sx={{ bgcolor: "#e9edef", flexShrink: 0 }} />
+                <Box flex={1}>
+                  <Skeleton variant="text" width="70%" sx={{ bgcolor: "#e9edef" }} />
+                  <Skeleton variant="text" width="40%" sx={{ bgcolor: "#f0f0f0" }} />
                 </Box>
-              ))}
-            </Stack>
-          ) : data?.allRequests.length > 0 ? (
-            data?.allRequests?.map(({ sender, _id }) => (
-              <NotificationItem
-                sender={sender}
-                _id={_id}
-                handler={friendRequestHandler}
-                key={_id}
-              />
-            ))
-          ) : (
-            <Box sx={{ py: 4, textAlign: "center" }}>
-              <NotificationsNoneIcon sx={{ fontSize: 40, color: "rgba(255,255,255,0.15)", mb: 1 }} />
-              <Typography sx={{ color: "rgba(148,163,184,0.5)", fontSize: "0.85rem" }}>
-                No new notifications
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Stack>
+              </Box>
+            ))}
+          </Stack>
+        ) : data?.allRequests?.length > 0 ? (
+          data.allRequests.map(({ sender, _id }) => (
+            <NotificationItem sender={sender} _id={_id} handler={friendRequestHandler} key={_id} />
+          ))
+        ) : (
+          <Box sx={{ py: 5, textAlign: "center" }}>
+            <NotificationsNoneIcon sx={{ fontSize: 40, color: "#d1d7db", mb: 1 }} />
+            <Typography sx={{ color: "#8696a0", fontSize: "0.875rem",
+              fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+              No new notifications
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Dialog>
   );
 };
@@ -119,60 +95,37 @@ const Notifications = () => {
 const NotificationItem = memo(({ sender, _id, handler }) => {
   const { name, avatar } = sender;
   return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1.5,
-        p: 1.25,
-        borderRadius: "12px",
-        transition: "background 0.15s ease",
-        "&:hover": { bgcolor: "rgba(255,255,255,0.04)" },
-      }}
-    >
-      {/* Avatar */}
-      <Box sx={{ position: "relative", flexShrink: 0 }}>
-        <Box sx={{
-          position: "absolute",
-          inset: -2,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
-          opacity: 0.5,
-        }} />
-        <Avatar
-          src={transformImage(avatar?.[0])}
-          sx={{ width: 40, height: 40, position: "relative", border: "2px solid #0f172a" }}
-        />
-      </Box>
-
-      {/* Text */}
-      <Typography
+    <Box sx={{
+      display: "flex", alignItems: "center", gap: 1.5,
+      px: 2, py: 1.5,
+      borderBottom: "1px solid #f5f6f6",
+      "&:hover": { bgcolor: "#f5f6f6" },
+      transition: "background 0.12s ease",
+    }}>
+      <Avatar
+        src={transformImage(avatar?.[0])}
         sx={{
-          flex: 1,
-          color: "rgba(226,232,240,0.85)",
-          fontSize: "0.85rem",
-          lineHeight: 1.4,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
+          width: 46, height: 46, flexShrink: 0,
+          border: "2px solid #e9edef",
         }}
-      >
-        <span style={{ fontWeight: 600, color: "#f1f5f9" }}>{name}</span>
+      />
+      <Typography sx={{
+        flex: 1, color: "#111b21", fontSize: "0.875rem",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        lineHeight: 1.4,
+      }}>
+        <span style={{ fontWeight: 600 }}>{name}</span>
         {" "}sent you a friend request.
       </Typography>
-
-      {/* Actions */}
-      <Stack direction="row" gap={0.5} flexShrink={0}>
+      <Stack direction="row" gap={0.75} flexShrink={0}>
         <IconButton
           onClick={() => handler({ _id, accept: true })}
           size="small"
           sx={{
-            bgcolor: "rgba(34,197,94,0.12)",
-            color: "#22c55e",
-            borderRadius: "8px",
-            "&:hover": { bgcolor: "rgba(34,197,94,0.22)" },
+            bgcolor: "#e7f8f4", color: "#00a884",
+            width: 32, height: 32,
+            "&:hover": { bgcolor: "#00a884", color: "white" },
+            transition: "all 0.15s ease",
           }}
         >
           <CheckIcon sx={{ fontSize: 16 }} />
@@ -181,13 +134,13 @@ const NotificationItem = memo(({ sender, _id, handler }) => {
           onClick={() => handler({ _id, accept: false })}
           size="small"
           sx={{
-            bgcolor: "rgba(244,63,94,0.12)",
-            color: "#f43f5e",
-            borderRadius: "8px",
-            "&:hover": { bgcolor: "rgba(244,63,94,0.22)" },
+            bgcolor: "#fef0f0", color: "#ef4444",
+            width: 32, height: 32,
+            "&:hover": { bgcolor: "#ef4444", color: "white" },
+            transition: "all 0.15s ease",
           }}
         >
-          <RejectIcon sx={{ fontSize: 16 }} />
+          <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>
       </Stack>
     </Box>

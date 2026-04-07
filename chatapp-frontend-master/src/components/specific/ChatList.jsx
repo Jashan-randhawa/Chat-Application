@@ -1,108 +1,65 @@
-// ============================================================
-// REDESIGNED ChatList — dark sidebar with search hint + header
-// Changes: added section header, smooth scroll, empty state
-// ============================================================
-
-import { Box, Stack, Typography } from "@mui/material";
-import { ChatBubbleOutline as ChatBubbleOutlineIcon } from "@mui/icons-material";
-import React from "react";
+import { Box, Stack, Typography, InputAdornment } from "@mui/material";
+import { Search as SearchIcon } from "@mui/icons-material";
+import React, { useState } from "react";
 import ChatItem from "../shared/ChatItem";
 
 const ChatList = ({
-  w = "100%",
-  chats = [],
-  chatId,
-  onlineUsers = [],
-  newMessagesAlert = [{ chatId: "", count: 0 }],
-  handleDeleteChat,
+  w = "100%", chats = [], chatId, onlineUsers = [],
+  newMessagesAlert = [{ chatId: "", count: 0 }], handleDeleteChat,
 }) => {
+  const [search, setSearch] = useState("");
+
+  const filtered = chats?.filter(c =>
+    !search || c.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <Stack
-      width={w}
-      direction={"column"}
-      height={"100%"}
-      sx={{ overflow: "hidden" }}
-    >
-      {/* Sidebar header */}
-      <Box
-        sx={{
-          px: 2,
-          py: 1.5,
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          flexShrink: 0,
-        }}
-      >
-        <Typography
-          sx={{
-            color: "rgba(148,163,184,0.7)",
-            fontSize: "0.7rem",
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-          }}
-        >
-          Messages
-        </Typography>
+    <Stack width={w} direction="column" height="100%" sx={{ overflow: "hidden" }}>
+      {/* WhatsApp-style search bar */}
+      <Box sx={{ px: 1.5, py: 1.25, bgcolor: "#f0f2f5", flexShrink: 0 }}>
+        <Box sx={{
+          display: "flex", alignItems: "center", gap: 1,
+          bgcolor: "#ffffff", borderRadius: "8px",
+          px: 1.5, py: 0.75,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+        }}>
+          <SearchIcon sx={{ color: "#8696a0", fontSize: 18, flexShrink: 0 }} />
+          <input
+            placeholder="Search or start new chat"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              border: "none", outline: "none", background: "transparent",
+              fontSize: "0.9rem", color: "#111b21", width: "100%",
+              fontFamily: "'Segoe UI', system-ui, sans-serif",
+            }}
+          />
+        </Box>
       </Box>
 
       {/* Chat list */}
-      <Box
-        sx={{
-          flex: 1,
-          overflowY: "auto",
-          overflowX: "hidden",
-          // Custom scrollbar
-          "&::-webkit-scrollbar": { width: 4 },
-          "&::-webkit-scrollbar-track": { background: "transparent" },
-          "&::-webkit-scrollbar-thumb": {
-            background: "rgba(255,255,255,0.1)",
-            borderRadius: 4,
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            background: "rgba(255,255,255,0.18)",
-          },
-        }}
-      >
-        {chats?.length === 0 ? (
-          /* Empty state */
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-              gap: 1.5,
-              p: 4,
-            }}
-          >
-            <ChatBubbleOutlineIcon
-              sx={{ fontSize: 40, color: "rgba(255,255,255,0.15)" }}
-            />
-            <Typography
-              sx={{
-                color: "rgba(255,255,255,0.3)",
-                fontSize: "0.85rem",
-                textAlign: "center",
-                lineHeight: 1.5,
-              }}
-            >
-              No conversations yet.
-              <br />
-              Search for friends to start chatting.
+      <Box sx={{
+        flex: 1, overflowY: "auto", overflowX: "hidden",
+        "&::-webkit-scrollbar": { width: 6 },
+        "&::-webkit-scrollbar-track": { background: "transparent" },
+        "&::-webkit-scrollbar-thumb": { background: "#d1d7db", borderRadius: 3 },
+        "&::-webkit-scrollbar-thumb:hover": { background: "#b0b7bc" },
+      }}>
+        {filtered?.length === 0 ? (
+          <Box sx={{
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            height: "60%", gap: 1.5, p: 4,
+          }}>
+            <Typography sx={{ color: "#8696a0", fontSize: "0.9rem", textAlign: "center" }}>
+              {search ? `No chats matching "${search}"` : "No conversations yet."}
             </Typography>
           </Box>
         ) : (
-          chats?.map((data, index) => {
+          filtered?.map((data, index) => {
             const { avatar, _id, name, groupChat, members } = data;
-
-            const newMessageAlert = newMessagesAlert.find(
-              ({ chatId }) => chatId === _id
-            );
-
-            const isOnline = members?.some((member) =>
-              onlineUsers.includes(member)
-            );
+            const newMessageAlert = newMessagesAlert.find(({ chatId }) => chatId === _id);
+            const isOnline = members?.some(member => onlineUsers.includes(member));
 
             return (
               <ChatItem

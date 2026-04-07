@@ -1,124 +1,143 @@
-// ============================================================
-// REDESIGNED MessageComponent — WhatsApp-style chat bubbles
-// Changes: sent/received color split, tail decoration,
-//          sender name color, smooth entry animation,
-//          improved timestamp, attachment styling
-// ============================================================
-
 import { Box, Typography } from "@mui/material";
 import React, { memo } from "react";
-import { lightBlue } from "../../constants/color";
 import moment from "moment";
 import { fileFormat } from "../../lib/features";
 import RenderAttachment from "./RenderAttachment";
 import { motion } from "framer-motion";
+import { DoneAll as DoneAllIcon } from "@mui/icons-material";
 
 const MessageComponent = ({ message, user }) => {
   const { sender, content, attachments = [], createdAt } = message;
-
   const sameSender = sender?._id === user?._id;
-  const timeAgo = moment(createdAt).fromNow();
+  const time = moment(createdAt).format("h:mm A");
+  const isAdmin = sender?.name === "Admin";
+
+  if (isAdmin) {
+    return (
+      <Box sx={{
+        display: "flex", justifyContent: "center", my: 0.5,
+      }}>
+        <Box sx={{
+          bgcolor: "#fef9c3",
+          color: "#54656f",
+          borderRadius: "8px",
+          px: 2, py: 0.6,
+          fontSize: "0.75rem",
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          maxWidth: "80%",
+          textAlign: "center",
+          boxShadow: "0 1px 1px rgba(0,0,0,0.08)",
+        }}>
+          {content}
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      initial={{ opacity: 0, y: 8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       style={{
         alignSelf: sameSender ? "flex-end" : "flex-start",
-        maxWidth: "72%",
+        maxWidth: "65%",
         display: "flex",
         flexDirection: "column",
-        gap: "2px",
       }}
     >
-      {/* Sender name — group chat only */}
-      {!sameSender && sender?.name !== "Admin" && (
-        <Typography
-          sx={{
-            color: lightBlue,
-            fontWeight: 700,
-            fontSize: "0.72rem",
-            letterSpacing: "0.01em",
-            ml: 1.5,
-          }}
-        >
-          {sender.name}
+      {/* Sender name for group chats */}
+      {!sameSender && (
+        <Typography sx={{
+          color: getColorForName(sender?.name),
+          fontWeight: 600,
+          fontSize: "0.78rem",
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          mb: 0.2,
+          ml: 1,
+        }}>
+          {sender?.name}
         </Typography>
       )}
 
-      {/* Bubble */}
-      <Box
-        sx={{
-          backgroundColor: sameSender ? "#0ea5e9" : "#ffffff",
-          color: sameSender ? "#ffffff" : "#1e293b",
-          borderRadius: sameSender
-            ? "18px 18px 4px 18px"
-            : "18px 18px 18px 4px",
-          padding: "0.6rem 0.9rem",
-          boxShadow: sameSender
-            ? "0 4px 12px rgba(14,165,233,0.25)"
-            : "0 2px 8px rgba(0,0,0,0.08)",
-          position: "relative",
-          // Alert/admin style
-          ...(sender?.name === "Admin" && {
-            backgroundColor: "rgba(99,102,241,0.12)",
-            color: "#6366f1",
-            borderRadius: "12px",
-            border: "1px solid rgba(99,102,241,0.2)",
-            alignSelf: "center",
-            boxShadow: "none",
+      {/* WhatsApp bubble */}
+      <Box sx={{
+        bgcolor: sameSender ? "#d9fdd3" : "#ffffff",
+        borderRadius: sameSender ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
+        px: 1.25, pt: 0.6, pb: 0.4,
+        boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
+        position: "relative",
+        // Tail
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          ...(sameSender ? {
+            right: -7,
+            borderLeft: "8px solid #d9fdd3",
+            borderBottom: "8px solid transparent",
+          } : {
+            left: -7,
+            borderRight: "8px solid #ffffff",
+            borderBottom: "8px solid transparent",
           }),
-        }}
-      >
-        {/* Text content */}
+        },
+      }}>
+        {/* Text */}
         {content && (
-          <Typography
-            sx={{
-              fontSize: "0.9rem",
-              lineHeight: 1.5,
-              wordBreak: "break-word",
-              fontFamily: "'Inter', 'Segoe UI', sans-serif",
-            }}
-          >
+          <Typography sx={{
+            fontSize: "0.9375rem",
+            lineHeight: 1.45,
+            wordBreak: "break-word",
+            color: "#111b21",
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+            pr: 1,
+          }}>
             {content}
           </Typography>
         )}
 
         {/* Attachments */}
-        {attachments.length > 0 &&
-          attachments.map((attachment, index) => {
-            const url = attachment.url;
-            const file = fileFormat(url);
-            return (
-              <Box key={index} mt={content ? 0.5 : 0}>
-                <a
-                  href={url}
-                  target="_blank"
-                  download
-                  style={{ color: sameSender ? "white" : "#0ea5e9" }}
-                >
-                  {RenderAttachment(file, url)}
-                </a>
-              </Box>
-            );
-          })}
+        {attachments.length > 0 && attachments.map((attachment, index) => {
+          const url = attachment.url;
+          const file = fileFormat(url);
+          return (
+            <Box key={index} mt={content ? 0.5 : 0}>
+              <a href={url} target="_blank" download style={{ color: "#027eb5" }}>
+                {RenderAttachment(file, url)}
+              </a>
+            </Box>
+          );
+        })}
 
-        {/* Timestamp */}
-        <Typography
-          sx={{
-            fontSize: "0.65rem",
-            color: sameSender ? "rgba(255,255,255,0.65)" : "rgba(100,116,139,0.8)",
-            textAlign: "right",
-            mt: 0.4,
+        {/* Timestamp + tick - WA style inline */}
+        <Box sx={{
+          display: "flex", alignItems: "center", justifyContent: "flex-end",
+          gap: 0.3, mt: 0.2, ml: 2,
+        }}>
+          <Typography sx={{
+            fontSize: "0.68rem",
+            color: "#8696a0",
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
             lineHeight: 1,
-          }}
-        >
-          {timeAgo}
-        </Typography>
+          }}>
+            {time}
+          </Typography>
+          {sameSender && (
+            <DoneAllIcon sx={{ fontSize: 14, color: "#53bdeb" }} />
+          )}
+        </Box>
       </Box>
     </motion.div>
   );
+};
+
+// WA uses different colors per contact name
+const NAME_COLORS = ["#e06c75", "#e5c07b", "#98c379", "#56b6c2", "#c678dd", "#61afef", "#d19a66"];
+const getColorForName = (name = "") => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+  return NAME_COLORS[hash % NAME_COLORS.length];
 };
 
 export default memo(MessageComponent);

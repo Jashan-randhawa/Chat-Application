@@ -1,21 +1,7 @@
-// ============================================================
-// REDESIGNED Login page — dark premium auth screen
-// Changes: animated background, glassmorphism card,
-//          gradient logo, polished form fields,
-//          smooth toggle transition, modern typography
-// ============================================================
-
 import { useFileHandler, useInputValidation } from "6pp";
 import { CameraAlt as CameraAltIcon } from "@mui/icons-material";
 import {
-  Avatar,
-  Box,
-  Button,
-  Container,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
+  Avatar, Box, Button, Container, IconButton, Stack, TextField, Typography,
 } from "@mui/material";
 import axios from "axios";
 import React, { useState } from "react";
@@ -26,12 +12,10 @@ import { server } from "../constants/config";
 import { userExists } from "../redux/reducers/auth";
 import { usernameValidator } from "../utils/validators";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChatBubble as ChatBubbleIcon } from "@mui/icons-material";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-
   const toggleLogin = () => setIsLogin((prev) => !prev);
 
   const name = useInputValidation("");
@@ -39,12 +23,11 @@ const Login = () => {
   const username = useInputValidation("", usernameValidator);
   const password = useInputValidation("");
   const avatar = useFileHandler("single");
-
   const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const toastId = toast.loading("Signing in...");
+    const toastId = toast.loading("Logging in...");
     setIsLoading(true);
     try {
       const { data } = await axios.post(
@@ -56,9 +39,7 @@ const Login = () => {
       toast.success(data.message, { id: toastId });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something Went Wrong", { id: toastId });
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const handleSignUp = async (e) => {
@@ -80,132 +61,91 @@ const Login = () => {
       toast.success(data.message, { id: toastId });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something Went Wrong", { id: toastId });
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f2942 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Decorative orbs */}
-      <Box sx={{
-        position: "absolute",
-        width: 400,
-        height: 400,
-        borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)",
-        top: "-10%",
-        left: "-10%",
-        pointerEvents: "none",
-      }} />
-      <Box sx={{
-        position: "absolute",
-        width: 300,
-        height: 300,
-        borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)",
-        bottom: "5%",
-        right: "-5%",
-        pointerEvents: "none",
-      }} />
+    <Box sx={{
+      minHeight: "100vh",
+      bgcolor: "#f0f2f5",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* WhatsApp green top bar */}
+      <Box sx={{ width: "100%", height: 200, bgcolor: "#008069", flexShrink: 0 }} />
 
-      <Container maxWidth="xs" sx={{ position: "relative", zIndex: 1 }}>
-        {/* Brand logo */}
+      <Container maxWidth="xs" sx={{ position: "absolute", top: 80, zIndex: 1, width: "100%" }}>
+        {/* Logo */}
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
           <Box sx={{
-            width: 52,
-            height: 52,
-            borderRadius: "16px",
-            background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            width: 60, height: 60, borderRadius: "50%",
+            bgcolor: "white",
+            display: "flex", alignItems: "center", justifyContent: "center",
             mb: 1.5,
-            boxShadow: "0 8px 24px rgba(14,165,233,0.4)",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
           }}>
-            <ChatBubbleIcon sx={{ fontSize: 24, color: "white" }} />
+            <Box sx={{ fontSize: 30 }}>💬</Box>
           </Box>
           <Typography sx={{
-            fontWeight: 800,
-            fontSize: "1.6rem",
-            letterSpacing: "-0.03em",
+            fontWeight: 700, fontSize: "1.5rem",
             color: "white",
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+            letterSpacing: "0.01em",
           }}>
-            Echo<span style={{
-              background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>Chat</span>
-          </Typography>
-          <Typography sx={{ color: "rgba(148,163,184,0.8)", fontSize: "0.82rem", mt: 0.3 }}>
-            {isLogin ? "Welcome back" : "Create your account"}
+            ChatApp
           </Typography>
         </Box>
 
-        {/* Glass card */}
-        <Box
-          sx={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "20px",
-            p: { xs: 3, sm: 4 },
-            backdropFilter: "blur(20px)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-          }}
-        >
+        {/* White card */}
+        <Box sx={{
+          bgcolor: "white",
+          borderRadius: "12px",
+          p: { xs: 3, sm: 4 },
+          boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+        }}>
+          <Typography sx={{
+            fontWeight: 600, fontSize: "1.1rem",
+            color: "#111b21", mb: 0.5,
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+          }}>
+            {isLogin ? "Sign in" : "Create Account"}
+          </Typography>
+          <Typography sx={{
+            color: "#8696a0", fontSize: "0.82rem", mb: 2.5,
+            fontFamily: "'Segoe UI', system-ui, sans-serif",
+          }}>
+            {isLogin ? "Welcome back!" : "Join the conversation"}
+          </Typography>
+
           <AnimatePresence mode="wait">
             {isLogin ? (
               <motion.div
                 key="login"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
               >
                 <form onSubmit={handleLogin}>
                   <Stack spacing={2}>
-                    <AuthTextField
-                      label="Username"
-                      value={username.value}
-                      onChange={username.changeHandler}
-                      required
-                    />
-                    <AuthTextField
-                      label="Password"
-                      type="password"
-                      value={password.value}
-                      onChange={password.changeHandler}
-                      required
-                    />
-                    <GradientButton type="submit" disabled={isLoading}>
+                    <WATextField label="Username" value={username.value} onChange={username.changeHandler} required />
+                    <WATextField label="Password" type="password" value={password.value} onChange={password.changeHandler} required />
+                    <WAButton type="submit" disabled={isLoading}>
                       {isLoading ? "Signing in..." : "Sign In"}
-                    </GradientButton>
+                    </WAButton>
                     <Box sx={{ textAlign: "center" }}>
-                      <Typography sx={{ color: "rgba(148,163,184,0.6)", fontSize: "0.8rem", mb: 0.5 }}>
-                        Don't have an account?
+                      <Typography sx={{ color: "#8696a0", fontSize: "0.82rem", display: "inline" }}>
+                        Don't have an account?{" "}
                       </Typography>
-                      <Button
-                        onClick={toggleLogin}
-                        disabled={isLoading}
-                        sx={{
-                          color: "#0ea5e9",
-                          textTransform: "none",
-                          fontWeight: 600,
-                          fontSize: "0.85rem",
-                          "&:hover": { bgcolor: "rgba(14,165,233,0.08)" },
-                        }}
-                      >
-                        Create account →
+                      <Button onClick={toggleLogin} disabled={isLoading} sx={{
+                        color: "#00a884", textTransform: "none",
+                        fontWeight: 600, fontSize: "0.82rem", p: 0, minWidth: 0,
+                        "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
+                      }}>
+                        Sign up
                       </Button>
                     </Box>
                   </Stack>
@@ -214,76 +154,48 @@ const Login = () => {
             ) : (
               <motion.div
                 key="signup"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
               >
                 <form onSubmit={handleSignUp}>
                   <Stack spacing={2}>
-                    {/* Avatar upload */}
                     <Box sx={{ display: "flex", justifyContent: "center" }}>
-                      <Stack position={"relative"} width={"5.5rem"}>
+                      <Stack position="relative" width="5rem">
                         <Avatar
-                          sx={{
-                            width: "5.5rem",
-                            height: "5.5rem",
-                            border: "3px solid rgba(14,165,233,0.5)",
-                            boxShadow: "0 4px 16px rgba(14,165,233,0.25)",
-                          }}
+                          sx={{ width: "5rem", height: "5rem", border: "3px solid #00a884" }}
                           src={avatar.preview}
                         />
-                        <IconButton
-                          component="label"
-                          sx={{
-                            position: "absolute",
-                            bottom: -4,
-                            right: -4,
-                            bgcolor: "#0ea5e9",
-                            color: "white",
-                            width: 28,
-                            height: 28,
-                            "&:hover": { bgcolor: "#0284c7" },
-                          }}
-                        >
+                        <IconButton component="label" sx={{
+                          position: "absolute", bottom: -4, right: -4,
+                          bgcolor: "#00a884", color: "white",
+                          width: 28, height: 28,
+                          "&:hover": { bgcolor: "#008069" },
+                        }}>
                           <CameraAltIcon sx={{ fontSize: 14 }} />
                           <VisuallyHiddenInput type="file" onChange={avatar.changeHandler} />
                         </IconButton>
                       </Stack>
                     </Box>
-                    {avatar.error && (
-                      <Typography color="error" variant="caption" textAlign="center">
-                        {avatar.error}
-                      </Typography>
-                    )}
-
-                    <AuthTextField label="Full Name" value={name.value} onChange={name.changeHandler} required />
-                    <AuthTextField label="Bio" value={bio.value} onChange={bio.changeHandler} required />
-                    <AuthTextField label="Username" value={username.value} onChange={username.changeHandler} required />
-                    {username.error && (
-                      <Typography color="error" variant="caption">{username.error}</Typography>
-                    )}
-                    <AuthTextField label="Password" type="password" value={password.value} onChange={password.changeHandler} required />
-
-                    <GradientButton type="submit" disabled={isLoading}>
+                    <WATextField label="Full Name" value={name.value} onChange={name.changeHandler} required />
+                    <WATextField label="About" value={bio.value} onChange={bio.changeHandler} required />
+                    <WATextField label="Username" value={username.value} onChange={username.changeHandler} required />
+                    {username.error && <Typography color="error" variant="caption">{username.error}</Typography>}
+                    <WATextField label="Password" type="password" value={password.value} onChange={password.changeHandler} required />
+                    <WAButton type="submit" disabled={isLoading}>
                       {isLoading ? "Creating account..." : "Create Account"}
-                    </GradientButton>
+                    </WAButton>
                     <Box sx={{ textAlign: "center" }}>
-                      <Typography sx={{ color: "rgba(148,163,184,0.6)", fontSize: "0.8rem", mb: 0.5 }}>
-                        Already have an account?
+                      <Typography sx={{ color: "#8696a0", fontSize: "0.82rem", display: "inline" }}>
+                        Already have an account?{" "}
                       </Typography>
-                      <Button
-                        onClick={toggleLogin}
-                        disabled={isLoading}
-                        sx={{
-                          color: "#0ea5e9",
-                          textTransform: "none",
-                          fontWeight: 600,
-                          fontSize: "0.85rem",
-                          "&:hover": { bgcolor: "rgba(14,165,233,0.08)" },
-                        }}
-                      >
-                        Sign in →
+                      <Button onClick={toggleLogin} disabled={isLoading} sx={{
+                        color: "#00a884", textTransform: "none",
+                        fontWeight: 600, fontSize: "0.82rem", p: 0, minWidth: 0,
+                        "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
+                      }}>
+                        Sign in
                       </Button>
                     </Box>
                   </Stack>
@@ -297,59 +209,44 @@ const Login = () => {
   );
 };
 
-// Styled sub-components for the dark theme
-
-const AuthTextField = (props) => (
+const WATextField = (props) => (
   <TextField
     {...props}
     variant="outlined"
     size="small"
     sx={{
       "& .MuiOutlinedInput-root": {
-        borderRadius: "12px",
-        bgcolor: "rgba(255,255,255,0.04)",
-        color: "white",
-        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-        "&:hover fieldset": { borderColor: "rgba(14,165,233,0.4)" },
-        "&.Mui-focused fieldset": { borderColor: "#0ea5e9", borderWidth: 1.5 },
+        borderRadius: "8px",
+        bgcolor: "#f0f2f5",
+        "& fieldset": { borderColor: "#e9edef" },
+        "&:hover fieldset": { borderColor: "#00a884" },
+        "&.Mui-focused fieldset": { borderColor: "#00a884", borderWidth: 1.5 },
       },
       "& .MuiInputLabel-root": {
-        color: "rgba(148,163,184,0.7)",
-        "&.Mui-focused": { color: "#0ea5e9" },
+        color: "#8696a0",
+        "&.Mui-focused": { color: "#00a884" },
       },
-      "& input": { color: "white", fontSize: "0.9rem" },
-      "& input:-webkit-autofill": {
-        WebkitBoxShadow: "0 0 0 100px #1e2d45 inset",
-        WebkitTextFillColor: "white",
-      },
+      "& input": { color: "#111b21", fontSize: "0.9rem", fontFamily: "'Segoe UI', system-ui, sans-serif" },
     }}
   />
 );
 
-const GradientButton = ({ children, ...props }) => (
+const WAButton = ({ children, ...props }) => (
   <Button
     {...props}
     fullWidth
     sx={{
-      background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
+      bgcolor: "#00a884",
       color: "white",
-      borderRadius: "12px",
-      py: 1.2,
-      fontWeight: 700,
+      borderRadius: "8px",
+      py: 1.1,
+      fontWeight: 600,
       fontSize: "0.95rem",
       textTransform: "none",
-      letterSpacing: "-0.01em",
-      boxShadow: "0 4px 16px rgba(14,165,233,0.35)",
-      "&:hover": {
-        background: "linear-gradient(135deg, #0284c7, #4f46e5)",
-        boxShadow: "0 6px 20px rgba(14,165,233,0.5)",
-        transform: "translateY(-1px)",
-      },
-      "&:disabled": {
-        background: "rgba(255,255,255,0.08)",
-        color: "rgba(255,255,255,0.3)",
-      },
-      transition: "all 0.2s ease",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      boxShadow: "none",
+      "&:hover": { bgcolor: "#008069", boxShadow: "none" },
+      "&:disabled": { bgcolor: "#e9edef", color: "#8696a0" },
     }}
   >
     {children}
