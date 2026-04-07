@@ -1,4 +1,5 @@
 import { compare } from "bcrypt";
+import mongoose from "mongoose";
 import { NEW_REQUEST, REFETCH_CHATS } from "../constants/events.js";
 import { getOtherMember } from "../lib/helper.js";
 import { TryCatch } from "../middlewares/error.js";
@@ -84,10 +85,11 @@ const searchUser = TryCatch(async (req, res) => {
 
   //  extracting All Users from my chats means friends or people I have chatted with
   const allUsersFromMyChats = myChats.flatMap((chat) => chat.members);
+  const excludedUsers = [...allUsersFromMyChats, req.user];
 
   // Finding all users except me and my friends
   const allUsersExceptMeAndFriends = await User.find({
-    _id: { $nin: allUsersFromMyChats },
+    _id: { $nin: excludedUsers },
     name: { $regex: name, $options: "i" },
   });
 
@@ -192,7 +194,7 @@ const getMyNotifications = TryCatch(async (req, res) => {
   });
 });
 
-const getMyFriends = TryCatch(async (req, res) => {
+const getMyFriends = TryCatch(async (req, res, next) => {
   const chatId = req.query.chatId;
 
   const chats = await Chat.find({
@@ -202,19 +204,25 @@ const getMyFriends = TryCatch(async (req, res) => {
 
   const friends = chats.map(({ members }) => {
     const otherUser = getOtherMember(members, req.user);
+    if (!otherUser) return null;
 
     return {
       _id: otherUser._id,
       name: otherUser.name,
       avatar: otherUser.avatar.url,
     };
-  });
+  }).filter(Boolean);
 
   if (chatId) {
+    if (!mongoose.isValidObjectId(chatId))
+      return next(new ErrorHandler("Invalid Chat ID", 400));
+
     const chat = await Chat.findById(chatId);
+    if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
     const availableFriends = friends.filter(
-      (friend) => !chat.members.includes(friend._id)
+      (friend) =>
+        !chat.members.some((member) => member.toString() === friend._id.toString())
     );
 
     return res.status(200).json({

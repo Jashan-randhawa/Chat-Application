@@ -4,13 +4,17 @@ import moment from "moment";
 import { fileFormat } from "../../lib/features";
 import RenderAttachment from "./RenderAttachment";
 import { motion } from "framer-motion";
-import { DoneAll as DoneAllIcon } from "@mui/icons-material";
+import { Done as DoneIcon, DoneAll as DoneAllIcon } from "@mui/icons-material";
 
 const MessageComponent = ({ message, user }) => {
-  const { sender, content, attachments = [], createdAt } = message;
+  const { sender, content, attachments = [], createdAt, deliveredTo = [], readBy = [] } = message;
   const sameSender = sender?._id === user?._id;
   const time = moment(createdAt).format("h:mm A");
   const isAdmin = sender?.name === "Admin";
+  const isRead = readBy.some((reader) => reader?.toString() !== user?._id?.toString());
+  const isDelivered = deliveredTo.some(
+    (receiver) => receiver?.toString() !== user?._id?.toString()
+  );
 
   if (isAdmin) {
     return (
@@ -124,7 +128,13 @@ const MessageComponent = ({ message, user }) => {
             {time}
           </Typography>
           {sameSender && (
-            <DoneAllIcon sx={{ fontSize: 14, color: "#53bdeb" }} />
+            isRead ? (
+              <DoneAllIcon sx={{ fontSize: 14, color: "#53bdeb" }} />
+            ) : isDelivered ? (
+              <DoneAllIcon sx={{ fontSize: 14, color: "#8696a0" }} />
+            ) : (
+              <DoneIcon sx={{ fontSize: 14, color: "#8696a0" }} />
+            )
           )}
         </Box>
       </Box>

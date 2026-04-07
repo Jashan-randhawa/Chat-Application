@@ -6,10 +6,6 @@ import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
   Mic as MicIcon,
-  MoreVert as MoreVertIcon,
-  Search as SearchIcon,
-  Phone as PhoneIcon,
-  Videocam as VideoIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { InputBox } from "../components/styles/StyledComponents";
@@ -17,9 +13,9 @@ import FileMenu from "../components/dialogs/FileMenu";
 import MessageComponent from "../components/shared/MessageComponent";
 import { getSocket } from "../socket";
 import {
-  ALERT, CHAT_JOINED, CHAT_LEAVED, NEW_MESSAGE, START_TYPING, STOP_TYPING,
+  ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_DELIVERED, MESSAGE_READ, NEW_MESSAGE, START_TYPING, STOP_TYPING,
 } from "../constants/events";
-import { useChatDetailsQuery, useGetMessagesQuery } from "../redux/api/api";
+import { useChatDetailsQuery, useGetMessagesQuery, useMarkMessageReadMutation } from "../redux/api/api";
 import { useErrors, useSocketEvents } from "../hooks/hook";
 import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
@@ -43,6 +39,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const [IamTyping, setIamTyping] = useState(false);
   const [userTyping, setUserTyping] = useState(false);
   const typingTimeout = useRef(null);
+  const readReceiptQueueRef = useRef(new Set());
+  const [markMessageRead] = useMarkMessageReadMutation();
 
   const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
@@ -61,7 +59,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
 
   const members = chatDetails?.data?.chat?.members;
   const chatName = chatDetails?.data?.chat?.name;
-  const isGroupChat = chatDetails?.data?.chat?.groupChat;
 
   const messageOnChange = (e) => {
     setMessage(e.target.value);
@@ -88,6 +85,30 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
     setMessage("");
   };
 
+  const addUniqueUsers = (existingUsers = [], usersToAdd = []) => {
+    const uniqueIds = new Set(existingUsers.map((id) => id?.toString()));
+    usersToAdd.forEach((id) => uniqueIds.add(id?.toString()));
+    return Array.from(uniqueIds);
+  };
+
+  const updateMessageReceiptInState = (messageId, updater) => {
+    if (!messageId) return;
+    setMessages((prev) =>
+      prev.map((messageItem) =>
+        messageItem._id?.toString() === messageId.toString()
+          ? updater(messageItem)
+          : messageItem
+      )
+    );
+    setOldMessages((prev) =>
+      prev.map((messageItem) =>
+        messageItem._id?.toString() === messageId.toString()
+          ? updater(messageItem)
+          : messageItem
+      )
+    );
+  };
+
   useEffect(() => {
     socket.emit(CHAT_JOINED, { userId: user._id, members });
     dispatch(removeNewMessagesAlert(chatId));
@@ -111,6 +132,27 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const newMessagesListener = useCallback((data) => {
     if (data.chatId !== chatId) return;
     setMessages((prev) => [...prev, data.message]);
+
+    if (data.message?.sender?._id !== user?._id && data.message?._id) {
+      markMessageRead(data.message._id);
+    }
+  }, [chatId, markMessageRead, user?._id]);
+
+  const messageDeliveredListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    updateMessageReceiptInState(data.messageId, (messageItem) => ({
+      ...messageItem,
+      deliveredTo: addUniqueUsers(messageItem.deliveredTo, data.deliveredTo || []),
+    }));
+  }, [chatId]);
+
+  const messageReadListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    updateMessageReceiptInState(data.messageId, (messageItem) => ({
+      ...messageItem,
+      deliveredTo: addUniqueUsers(messageItem.deliveredTo, [data.userId]),
+      readBy: addUniqueUsers(messageItem.readBy, [data.userId]),
+    }));
   }, [chatId]);
 
   const startTypingListener = useCallback((data) => {
@@ -136,6 +178,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   useSocketEvents(socket, {
     [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
+    [MESSAGE_DELIVERED]: messageDeliveredListener,
+    [MESSAGE_READ]: messageReadListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
   });
@@ -143,6 +187,24 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   useErrors(errors);
 
   const allMessages = [...oldMessages, ...messages];
+
+  useEffect(() => {
+    const unreadIncoming = allMessages.filter(
+      (msg) =>
+        msg?._id &&
+        msg?.sender?._id !== user?._id &&
+        !msg?.readBy?.some((reader) => reader?.toString() === user?._id?.toString())
+    );
+
+    unreadIncoming.forEach((msg) => {
+      const id = msg._id.toString();
+      if (readReceiptQueueRef.current.has(id)) return;
+      readReceiptQueueRef.current.add(id);
+      markMessageRead(id).finally(() => {
+        readReceiptQueueRef.current.delete(id);
+      });
+    });
+  }, [allMessages, markMessageRead, user?._id]);
 
   // Empty state (no chat selected — desktop only, mobile never shows this)
   if (!chatId) {
@@ -217,18 +279,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           </IconButton>
         )}
 
-        {/* Avatar */}
-        <Box sx={{
-          width: 38, height: 38, borderRadius: "50%",
-          bgcolor: "rgba(255,255,255,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "0.95rem", color: "white", fontWeight: 700, flexShrink: 0,
-        }}>
-          {chatName?.[0]?.toUpperCase() || "C"}
-        </Box>
-
-        {/* Name + status */}
-        <Box flex={1} minWidth={0}>
+        {/* Name only (1:1 chat header simplified) */}
+        <Box flex={1} minWidth={0} display="flex" alignItems="center">
           <Typography sx={{
             fontWeight: 600, fontSize: "0.9375rem",
             color: "white", lineHeight: 1.2,
@@ -237,25 +289,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           }}>
             {chatName || "Chat"}
           </Typography>
-          <Typography sx={{
-            fontSize: "0.72rem", color: "rgba(255,255,255,0.75)",
-            fontFamily: "'Segoe UI', system-ui, sans-serif",
-          }}>
-            {userTyping
-              ? <span style={{ color: "#d1fae5" }}>typing...</span>
-              : isGroupChat ? "Group chat" : "click here for info"
-            }
-          </Typography>
-        </Box>
-
-        {/* Right action icons */}
-        <Box display="flex">
-          {[VideoIcon, PhoneIcon, SearchIcon, MoreVertIcon].map((Icon, i) => (
-            <IconButton key={i} size="small"
-              sx={{ color: "rgba(255,255,255,0.85)", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
-              <Icon sx={{ fontSize: 20 }} />
-            </IconButton>
-          ))}
         </Box>
       </Box>
 
