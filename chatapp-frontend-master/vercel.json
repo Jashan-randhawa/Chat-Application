@@ -1,8 +1,11 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/((?!.*\\.[a-zA-Z0-9]+$).*)",
-      "destination": "/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
