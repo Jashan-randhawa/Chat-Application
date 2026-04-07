@@ -254,7 +254,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
 
     setIsCallActive(false);
     setIncomingCall(null);
-    setCallPeerId(null);
   };
 
   const startVideoCall = async () => {
@@ -263,7 +262,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
         (member) => member?._id?.toString() !== user?._id?.toString()
       );
       if (!targetUser?._id) return toast.error("No receiver found for this call.");
-      setCallPeerId(targetUser._id);
 
       await ensureLocalStream();
       const peer = createPeerConnection(targetUser._id);
@@ -273,7 +271,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
       socket.emit(CALL_OFFER, {
         chatId,
         offer,
-        toUserId: targetUser._id,
       });
       setIsCallActive(true);
     } catch (error) {
@@ -287,7 +284,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
     try {
       await ensureLocalStream();
       const peer = createPeerConnection(incomingCall.from._id);
-      setCallPeerId(incomingCall.from._id);
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer)
       );
@@ -401,7 +397,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const callOfferListener = useCallback((data) => {
     if (data.chatId !== chatId || data.from?._id === user?._id) return;
     setIncomingCall({ offer: data.offer, from: data.from });
-    setCallPeerId(data.from._id);
     toast.success(`${data.from?.name || "Someone"} is calling...`);
   }, [chatId, user?._id]);
 

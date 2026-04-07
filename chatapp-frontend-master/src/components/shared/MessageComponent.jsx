@@ -6,10 +6,14 @@ import RenderAttachment from "./RenderAttachment";
 import { motion } from "framer-motion";
 
 const MessageComponent = ({ message, user }) => {
-  const { sender, content, attachments = [], createdAt } = message;
+  const { sender, content, attachments = [], createdAt, deliveredTo = [], readBy = [] } = message;
   const sameSender = sender?._id === user?._id;
   const time = moment(createdAt).format("h:mm A");
   const isAdmin = sender?.name === "Admin";
+  const isRead = readBy.some((reader) => reader?.toString() !== user?._id?.toString());
+  const isDelivered = deliveredTo.some(
+    (receiver) => receiver?.toString() !== user?._id?.toString()
+  );
 
   if (isAdmin) {
     return (
