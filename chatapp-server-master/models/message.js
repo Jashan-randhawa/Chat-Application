@@ -27,6 +27,18 @@ const schema = new Schema(
       ref: "Chat",
       required: true,
     },
+    deliveredTo: [
+      {
+        type: Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    readBy: [
+      {
+        type: Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,
