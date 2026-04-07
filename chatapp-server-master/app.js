@@ -8,8 +8,12 @@ import { createServer } from "http";
 import cors from "cors";
 import { v2 as cloudinary } from "cloudinary";
 import {
+  CALL_ANSWER,
+  CALL_ENDED,
+  CALL_OFFER,
   CHAT_JOINED,
   CHAT_LEAVED,
+  ICE_CANDIDATE,
   MESSAGE_DELIVERED,
   NEW_MESSAGE,
   NEW_MESSAGE_ALERT,
@@ -220,6 +224,103 @@ io.on("connection", (socket) => {
 
     const membersSocket = getSockets(members);
     io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
+  });
+
+  socket.on(CALL_OFFER, async ({ chatId, offer }) => {
+    try {
+      if (!chatId || !offer) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const recipientSockets = getSockets(
+        chat.members.filter((member) => member.toString() !== user._id.toString())
+      );
+
+      socket.to(recipientSockets).emit(CALL_OFFER, {
+        chatId,
+        offer,
+        from: { _id: user._id, name: user.name },
+      });
+    } catch (error) {
+      console.error("CALL_OFFER socket error:", error);
+    }
+  });
+
+  socket.on(CALL_ANSWER, async ({ chatId, answer, toUserId }) => {
+    try {
+      if (!chatId || !answer || !toUserId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const targetSocketId = userSocketIDs.get(toUserId.toString());
+      if (!targetSocketId) return;
+
+      socket.to(targetSocketId).emit(CALL_ANSWER, {
+        chatId,
+        answer,
+        fromUserId: user._id,
+      });
+    } catch (error) {
+      console.error("CALL_ANSWER socket error:", error);
+    }
+  });
+
+  socket.on(ICE_CANDIDATE, async ({ chatId, candidate, toUserId }) => {
+    try {
+      if (!chatId || !candidate || !toUserId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const targetSocketId = userSocketIDs.get(toUserId.toString());
+      if (!targetSocketId) return;
+
+      socket.to(targetSocketId).emit(ICE_CANDIDATE, {
+        chatId,
+        candidate,
+        fromUserId: user._id,
+      });
+    } catch (error) {
+      console.error("ICE_CANDIDATE socket error:", error);
+    }
+  });
+
+  socket.on(CALL_ENDED, async ({ chatId }) => {
+    try {
+      if (!chatId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const recipientSockets = getSockets(
+        chat.members.filter((member) => member.toString() !== user._id.toString())
+      );
+
+      socket.to(recipientSockets).emit(CALL_ENDED, {
+        chatId,
+        fromUserId: user._id,
+      });
+    } catch (error) {
+      console.error("CALL_ENDED socket error:", error);
+    }
   });
 
   socket.on("disconnect", () => {
