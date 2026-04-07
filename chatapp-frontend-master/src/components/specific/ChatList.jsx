@@ -9,8 +9,12 @@ const ChatList = ({
 }) => {
   const [search, setSearch] = useState("");
 
-  const filtered = chats?.filter(c =>
-    !search || c.name?.toLowerCase().includes(search.toLowerCase())
+  const filtered = chats?.filter(
+    (c) =>
+      c?.groupChat === false &&
+      Array.isArray(c?.members) &&
+      c.members.length > 0 &&
+      (!search || c.name?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
