@@ -8,6 +8,7 @@ import {
 } from "../utils/features.js";
 import {
   ALERT,
+  MESSAGE_READ,
   NEW_MESSAGE,
   NEW_MESSAGE_ALERT,
   REFETCH_CHATS,
@@ -106,7 +107,11 @@ const addMembers = TryCatch(async (req, res, next) => {
   const allNewMembers = await Promise.all(allNewMembersPromise);
 
   const uniqueMembers = allNewMembers
-    .filter((i) => !chat.members.includes(i._id.toString()))
+    .filter(
+      (i) =>
+        i &&
+        !chat.members.some((member) => member.toString() === i._id.toString())
+    )
     .map((i) => i._id);
 
   chat.members.push(...uniqueMembers);
@@ -339,7 +344,10 @@ const deleteChat = TryCatch(async (req, res, next) => {
       new ErrorHandler("You are not allowed to delete the group", 403)
     );
 
-  if (!chat.groupChat && !chat.members.includes(req.user.toString())) {
+  if (
+    !chat.groupChat &&
+    !chat.members.some((member) => member.toString() === req.user.toString())
+  ) {
     return next(
       new ErrorHandler("You are not allowed to delete the chat", 403)
     );
@@ -379,14 +387,17 @@ const getMessages = TryCatch(async (req, res, next) => {
   const resultPerPage = 20;
   const skip = (page - 1) * resultPerPage;
 
-  const chat = await Chat.findById(chatId);
+  const chat = await Chat.findById(chatId).select("members");
 
   if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
-  if (!chat.members.includes(req.user.toString()))
-    return next(
-      new ErrorHandler("You are not allowed to access this chat", 403)
-    );
+  const requesterId = req.user?.toString?.() || `${req.user}`;
+  const isMember = chat.members.some(
+    (member) => (member?._id || member).toString() === requesterId
+  );
+
+  if (!isMember)
+    return next(new ErrorHandler("You are not allowed to access this chat", 403));
 
   const [messages, totalMessagesCount] = await Promise.all([
     Message.find({ chat: chatId })
@@ -407,6 +418,36 @@ const getMessages = TryCatch(async (req, res, next) => {
   });
 });
 
+const markMessageAsRead = TryCatch(async (req, res, next) => {
+  const messageId = req.params.id;
+
+  const message = await Message.findById(messageId).populate("chat", "members");
+
+  if (!message) return next(new ErrorHandler("Message not found", 404));
+
+  const isMember = message.chat.members.some(
+    (member) => member.toString() === req.user.toString()
+  );
+
+  if (!isMember)
+    return next(new ErrorHandler("You are not allowed to access this chat", 403));
+
+  message.deliveredTo.addToSet(req.user);
+  message.readBy.addToSet(req.user);
+  await message.save();
+
+  emitEvent(req, MESSAGE_READ, message.chat.members, {
+    chatId: message.chat._id,
+    messageId: message._id,
+    userId: req.user,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Message marked as read",
+  });
+});
+
 export {
   newGroupChat,
   getMyChats,
@@ -419,4 +460,5 @@ export {
   renameGroup,
   deleteChat,
   getMessages,
+  markMessageAsRead,
 };
