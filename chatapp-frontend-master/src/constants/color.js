@@ -15,7 +15,6 @@ export const chatBg = "#efeae2";
 export const bgGradient = "linear-gradient(180deg, #00a884 0%, #008069 100%)";
 export const lightBlue = "#53bdeb";
 export const purple = "#7c3aed";
-export const purpleLight = "rgba(124,58,237,0.2)";
 export const sentBubble = "#d9fdd3";
 export const receivedBubble = "#ffffff";
 export const onlineGreen = "#00a884";

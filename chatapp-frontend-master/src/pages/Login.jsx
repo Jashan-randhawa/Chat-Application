@@ -66,34 +66,31 @@ const Login = () => {
 
   return (
     <Box sx={{
-      minHeight: "100vh",
+      minHeight: "100dvh",
       bgcolor: "#f0f2f5",
       display: "flex",
       flexDirection: "column",
-      alignItems: "center",
-      position: "relative",
-      overflow: "hidden",
+      overflowY: "auto",
     }}>
-      {/* WhatsApp green top bar */}
-      <Box sx={{ width: "100%", height: 200, bgcolor: "#008069", flexShrink: 0 }} />
+      {/* Green top section */}
+      <Box sx={{ width: "100%", height: { xs: 160, sm: 200 }, bgcolor: "#008069", flexShrink: 0 }} />
 
-      <Container maxWidth="xs" sx={{ position: "absolute", top: 80, zIndex: 1, width: "100%" }}>
+      {/* Card — floats over the green */}
+      <Box sx={{ mt: { xs: "-5rem", sm: "-6rem" }, px: 2, pb: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
         {/* Logo */}
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2.5 }}>
           <Box sx={{
-            width: 60, height: 60, borderRadius: "50%",
+            width: 64, height: 64, borderRadius: "50%",
             bgcolor: "white",
             display: "flex", alignItems: "center", justifyContent: "center",
-            mb: 1.5,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            mb: 1,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
           }}>
-            <Box sx={{ fontSize: 30 }}>💬</Box>
+            <Box sx={{ fontSize: 32 }}>💬</Box>
           </Box>
           <Typography sx={{
-            fontWeight: 700, fontSize: "1.5rem",
-            color: "white",
+            fontWeight: 700, fontSize: "1.4rem", color: "white",
             fontFamily: "'Segoe UI', system-ui, sans-serif",
-            letterSpacing: "0.01em",
           }}>
             ChatApp
           </Typography>
@@ -103,12 +100,13 @@ const Login = () => {
         <Box sx={{
           bgcolor: "white",
           borderRadius: "12px",
-          p: { xs: 3, sm: 4 },
-          boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+          p: { xs: 2.5, sm: 4 },
+          boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
+          width: "100%",
+          maxWidth: 420,
         }}>
           <Typography sx={{
-            fontWeight: 600, fontSize: "1.1rem",
-            color: "#111b21", mb: 0.5,
+            fontWeight: 600, fontSize: "1.1rem", color: "#111b21", mb: 0.5,
             fontFamily: "'Segoe UI', system-ui, sans-serif",
           }}>
             {isLogin ? "Sign in" : "Create Account"}
@@ -122,13 +120,9 @@ const Login = () => {
 
           <AnimatePresence mode="wait">
             {isLogin ? (
-              <motion.div
-                key="login"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div key="login"
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
                 <form onSubmit={handleLogin}>
                   <Stack spacing={2}>
                     <WATextField label="Username" value={username.value} onChange={username.changeHandler} required />
@@ -141,8 +135,8 @@ const Login = () => {
                         Don't have an account?{" "}
                       </Typography>
                       <Button onClick={toggleLogin} disabled={isLoading} sx={{
-                        color: "#00a884", textTransform: "none",
-                        fontWeight: 600, fontSize: "0.82rem", p: 0, minWidth: 0,
+                        color: "#00a884", textTransform: "none", fontWeight: 600,
+                        fontSize: "0.82rem", p: 0, minWidth: 0,
                         "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
                       }}>
                         Sign up
@@ -152,25 +146,17 @@ const Login = () => {
                 </form>
               </motion.div>
             ) : (
-              <motion.div
-                key="signup"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div key="signup"
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
                 <form onSubmit={handleSignUp}>
                   <Stack spacing={2}>
                     <Box sx={{ display: "flex", justifyContent: "center" }}>
                       <Stack position="relative" width="5rem">
-                        <Avatar
-                          sx={{ width: "5rem", height: "5rem", border: "3px solid #00a884" }}
-                          src={avatar.preview}
-                        />
+                        <Avatar sx={{ width: "5rem", height: "5rem", border: "3px solid #00a884" }} src={avatar.preview} />
                         <IconButton component="label" sx={{
                           position: "absolute", bottom: -4, right: -4,
-                          bgcolor: "#00a884", color: "white",
-                          width: 28, height: 28,
+                          bgcolor: "#00a884", color: "white", width: 28, height: 28,
                           "&:hover": { bgcolor: "#008069" },
                         }}>
                           <CameraAltIcon sx={{ fontSize: 14 }} />
@@ -191,8 +177,8 @@ const Login = () => {
                         Already have an account?{" "}
                       </Typography>
                       <Button onClick={toggleLogin} disabled={isLoading} sx={{
-                        color: "#00a884", textTransform: "none",
-                        fontWeight: 600, fontSize: "0.82rem", p: 0, minWidth: 0,
+                        color: "#00a884", textTransform: "none", fontWeight: 600,
+                        fontSize: "0.82rem", p: 0, minWidth: 0,
                         "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
                       }}>
                         Sign in
@@ -204,51 +190,35 @@ const Login = () => {
             )}
           </AnimatePresence>
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 };
 
 const WATextField = (props) => (
-  <TextField
-    {...props}
-    variant="outlined"
-    size="small"
-    sx={{
-      "& .MuiOutlinedInput-root": {
-        borderRadius: "8px",
-        bgcolor: "#f0f2f5",
-        "& fieldset": { borderColor: "#e9edef" },
-        "&:hover fieldset": { borderColor: "#00a884" },
-        "&.Mui-focused fieldset": { borderColor: "#00a884", borderWidth: 1.5 },
-      },
-      "& .MuiInputLabel-root": {
-        color: "#8696a0",
-        "&.Mui-focused": { color: "#00a884" },
-      },
-      "& input": { color: "#111b21", fontSize: "0.9rem", fontFamily: "'Segoe UI', system-ui, sans-serif" },
-    }}
-  />
+  <TextField {...props} variant="outlined" size="small" sx={{
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "8px", bgcolor: "#f0f2f5",
+      "& fieldset": { borderColor: "#e9edef" },
+      "&:hover fieldset": { borderColor: "#00a884" },
+      "&.Mui-focused fieldset": { borderColor: "#00a884", borderWidth: 1.5 },
+    },
+    "& .MuiInputLabel-root": { color: "#8696a0", "&.Mui-focused": { color: "#00a884" } },
+    "& input": { color: "#111b21", fontSize: "0.9rem", fontFamily: "'Segoe UI', system-ui, sans-serif" },
+  }} />
 );
 
 const WAButton = ({ children, ...props }) => (
-  <Button
-    {...props}
-    fullWidth
-    sx={{
-      bgcolor: "#00a884",
-      color: "white",
-      borderRadius: "8px",
-      py: 1.1,
-      fontWeight: 600,
-      fontSize: "0.95rem",
-      textTransform: "none",
-      fontFamily: "'Segoe UI', system-ui, sans-serif",
-      boxShadow: "none",
-      "&:hover": { bgcolor: "#008069", boxShadow: "none" },
-      "&:disabled": { bgcolor: "#e9edef", color: "#8696a0" },
-    }}
-  >
+  <Button {...props} fullWidth sx={{
+    bgcolor: "#00a884", color: "white", borderRadius: "8px",
+    py: 1.1, fontWeight: 600, fontSize: "0.95rem",
+    textTransform: "none", fontFamily: "'Segoe UI', system-ui, sans-serif",
+    boxShadow: "none",
+    "&:hover": { bgcolor: "#008069", boxShadow: "none" },
+    "&:disabled": { bgcolor: "#e9edef", color: "#8696a0" },
+    // Bigger tap target on mobile
+    minHeight: 44,
+  }}>
     {children}
   </Button>
 );

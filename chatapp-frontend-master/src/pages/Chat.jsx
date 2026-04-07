@@ -1,6 +1,6 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import AppLayout from "../components/layout/AppLayout";
-import { IconButton, Skeleton, Stack, Box, Typography, Avatar, Tooltip } from "@mui/material";
+import { IconButton, Skeleton, Stack, Box, Typography } from "@mui/material";
 import {
   AttachFile as AttachFileIcon,
   Send as SendIcon,
@@ -8,9 +8,9 @@ import {
   Mic as MicIcon,
   MoreVert as MoreVertIcon,
   Search as SearchIcon,
-  ArrowBack as ArrowBackIcon,
   Phone as PhoneIcon,
   Videocam as VideoIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { InputBox } from "../components/styles/StyledComponents";
 import FileMenu from "../components/dialogs/FileMenu";
@@ -27,9 +27,8 @@ import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
 import { TypingLoader } from "../components/layout/Loaders";
 import { useNavigate } from "react-router-dom";
-import { transformImage } from "../lib/features";
 
-const Chat = ({ chatId, user }) => {
+const Chat = ({ chatId, user, onBack, isMobile }) => {
   const socket = getSocket();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -74,7 +73,7 @@ const Chat = ({ chatId, user }) => {
     typingTimeout.current = setTimeout(() => {
       socket.emit(STOP_TYPING, { members, chatId });
       setIamTyping(false);
-    }, [2000]);
+    }, 2000);
   };
 
   const handleFileOpen = (e) => {
@@ -134,149 +133,150 @@ const Chat = ({ chatId, user }) => {
     }]);
   }, [chatId]);
 
-  const eventHandler = {
+  useSocketEvents(socket, {
     [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
-  };
+  });
 
-  useSocketEvents(socket, eventHandler);
   useErrors(errors);
 
   const allMessages = [...oldMessages, ...messages];
 
+  // Empty state (no chat selected — desktop only, mobile never shows this)
   if (!chatId) {
     return (
       <Box sx={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        bgcolor: "#f0f2f5",
-        gap: 2,
+        height: "100%", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        bgcolor: "#f0f2f5", gap: 2,
       }}>
         <Box sx={{
-          width: 200, height: 200,
-          borderRadius: "50%",
-          bgcolor: "#e9edef",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 180, height: 180, borderRadius: "50%",
+          bgcolor: "#e9edef", display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <Box sx={{ fontSize: 80 }}>💬</Box>
+          <Box sx={{ fontSize: 72 }}>💬</Box>
         </Box>
         <Typography sx={{
-          color: "#54656f", fontSize: "1.25rem", fontWeight: 300,
+          color: "#54656f", fontSize: "1.15rem", fontWeight: 300,
           fontFamily: "'Segoe UI', system-ui, sans-serif",
         }}>
           WhatsApp Web
         </Typography>
         <Typography sx={{
-          color: "#8696a0", fontSize: "0.875rem",
-          fontFamily: "'Segoe UI', system-ui, sans-serif",
-          textAlign: "center", maxWidth: 380,
+          color: "#8696a0", fontSize: "0.82rem", textAlign: "center", maxWidth: 340,
+          fontFamily: "'Segoe UI', system-ui, sans-serif", lineHeight: 1.6,
         }}>
-          Send and receive messages without keeping your phone online.<br/>
-          Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
+          Send and receive messages without keeping your phone online.
         </Typography>
-        <Box sx={{
-          display: "flex", alignItems: "center", gap: 1, mt: 2,
-          color: "#8696a0", fontSize: "0.8rem",
-          fontFamily: "'Segoe UI', system-ui, sans-serif",
-        }}>
-          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#00a884" }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#8696a0", fontSize: "0.75rem" }}>
+          <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: "#00a884" }} />
           End-to-end encrypted
         </Box>
       </Box>
     );
   }
 
-  return chatDetails.isLoading ? (
-    <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5, bgcolor: "#efeae2", height: "100%" }}>
-      {Array.from({ length: 7 }).map((_, i) => (
-        <Box key={i} sx={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-start" : "flex-end" }}>
-          <Skeleton variant="rounded" width={`${Math.random() * 200 + 80}px`} height={44}
-            sx={{ borderRadius: "12px", bgcolor: i % 2 === 0 ? "rgba(255,255,255,0.6)" : "rgba(217,253,211,0.8)" }}
-          />
-        </Box>
-      ))}
-    </Box>
-  ) : (
+  // Loading skeleton
+  if (chatDetails.isLoading) {
+    return (
+      <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5, bgcolor: "#efeae2", height: "100%" }}>
+        {Array.from({ length: 7 }).map((_, i) => (
+          <Box key={i} sx={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-start" : "flex-end" }}>
+            <Skeleton variant="rounded" width={`${Math.random() * 200 + 80}px`} height={44}
+              sx={{ borderRadius: "12px", bgcolor: i % 2 === 0 ? "rgba(255,255,255,0.6)" : "rgba(217,253,211,0.8)" }}
+            />
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  return (
     <Fragment>
-      {/* WhatsApp chat header */}
+      {/* Chat header */}
       <Box sx={{
-        px: 2, py: 1,
-        bgcolor: "#f0f2f5",
-        borderBottom: "1px solid #e9edef",
+        px: isMobile ? 1 : 2,
+        py: 1,
+        bgcolor: "#008069",
         display: "flex",
         alignItems: "center",
-        gap: 1.5,
+        gap: 1,
         flexShrink: 0,
-        minHeight: "3.25rem",
+        minHeight: "3.5rem",
       }}>
+        {/* Back button — mobile only */}
+        {isMobile && (
+          <IconButton
+            onClick={onBack || (() => navigate("/"))}
+            size="small"
+            sx={{ color: "white", mr: 0.5, flexShrink: 0 }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+        )}
+
         {/* Avatar */}
         <Box sx={{
-          width: 40, height: 40, borderRadius: "50%",
-          background: "linear-gradient(135deg, #00a884, #008069)",
+          width: 38, height: 38, borderRadius: "50%",
+          bgcolor: "rgba(255,255,255,0.25)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "1rem", color: "white", fontWeight: 700, flexShrink: 0,
+          fontSize: "0.95rem", color: "white", fontWeight: 700, flexShrink: 0,
         }}>
           {chatName?.[0]?.toUpperCase() || "C"}
         </Box>
 
         {/* Name + status */}
-        <Box flex={1}>
+        <Box flex={1} minWidth={0}>
           <Typography sx={{
             fontWeight: 600, fontSize: "0.9375rem",
-            color: "#111b21", lineHeight: 1.2,
+            color: "white", lineHeight: 1.2,
             fontFamily: "'Segoe UI', system-ui, sans-serif",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {chatName || "Chat"}
           </Typography>
           <Typography sx={{
-            fontSize: "0.75rem", color: "#8696a0",
+            fontSize: "0.72rem", color: "rgba(255,255,255,0.75)",
             fontFamily: "'Segoe UI', system-ui, sans-serif",
           }}>
-            {userTyping ? (
-              <span style={{ color: "#00a884" }}>typing...</span>
-            ) : (
-              isGroupChat ? "Group · Tap for info" : "click here for contact info"
-            )}
+            {userTyping
+              ? <span style={{ color: "#d1fae5" }}>typing...</span>
+              : isGroupChat ? "Group chat" : "click here for info"
+            }
           </Typography>
         </Box>
 
-        {/* Right actions */}
-        <Box display="flex" gap={0.5}>
+        {/* Right action icons */}
+        <Box display="flex">
           {[VideoIcon, PhoneIcon, SearchIcon, MoreVertIcon].map((Icon, i) => (
-            <IconButton key={i} size="small" sx={{
-              color: "#54656f",
-              "&:hover": { bgcolor: "#e9edef" },
-              borderRadius: "50%",
-            }}>
+            <IconButton key={i} size="small"
+              sx={{ color: "rgba(255,255,255,0.85)", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
               <Icon sx={{ fontSize: 20 }} />
             </IconButton>
           ))}
         </Box>
       </Box>
 
-      {/* Messages area - WA chat wallpaper style */}
+      {/* Messages area */}
       <Stack
         ref={containerRef}
         padding={"0.75rem 5%"}
         spacing={"0.25rem"}
-        height={"calc(100% - 3.25rem - 3.75rem)"}
         sx={{
+          flex: 1,
           overflowX: "hidden",
           overflowY: "auto",
-          // WhatsApp's authentic beige chat background
           background: "#efeae2",
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23cfc4b0' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          flexShrink: 0,
           display: "flex",
           flexDirection: "column",
           "&::-webkit-scrollbar": { width: 5 },
           "&::-webkit-scrollbar-track": { background: "transparent" },
           "&::-webkit-scrollbar-thumb": { background: "rgba(0,0,0,0.15)", borderRadius: 3 },
+          // Fix for mobile keyboard pushing content
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {allMessages.map((i) => (
@@ -286,21 +286,22 @@ const Chat = ({ chatId, user }) => {
         <div ref={bottomRef} />
       </Stack>
 
-      {/* WhatsApp input bar */}
+      {/* Input bar */}
       <Box
         component="form"
         onSubmit={submitHandler}
         sx={{
           bgcolor: "#f0f2f5",
-          px: 1.5, py: 0.75,
+          px: 1, py: 0.75,
           display: "flex",
           alignItems: "center",
-          gap: 1,
+          gap: 0.75,
           flexShrink: 0,
-          minHeight: "3.75rem",
+          // Handles iOS safe area (notch)
+          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
         }}
       >
-        {/* Emoji + Attach */}
+        {/* Text input container */}
         <Box sx={{
           display: "flex",
           bgcolor: "#ffffff",
@@ -308,52 +309,49 @@ const Chat = ({ chatId, user }) => {
           flex: 1,
           alignItems: "center",
           px: 1,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-          minHeight: "2.625rem",
+          minHeight: "2.75rem",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
         }}>
           <IconButton size="small" sx={{ color: "#54656f", flexShrink: 0 }}>
             <EmojiIcon sx={{ fontSize: 22 }} />
           </IconButton>
-          <IconButton
-            onClick={handleFileOpen}
-            size="small"
-            sx={{ color: "#54656f", flexShrink: 0, mr: 0.5 }}
-          >
+          <IconButton onClick={handleFileOpen} size="small"
+            sx={{ color: "#54656f", flexShrink: 0 }}>
             <AttachFileIcon sx={{ fontSize: 20, transform: "rotate(45deg)" }} />
           </IconButton>
-
           <InputBox
             placeholder="Type a message"
             value={message}
             onChange={messageOnChange}
             style={{
               flex: 1,
-              border: "none",
-              outline: "none",
+              border: "none", outline: "none",
               background: "transparent",
-              padding: "0.4rem 0.25rem",
+              padding: "0.5rem 0.25rem",
               fontSize: "0.9375rem",
               color: "#111b21",
               fontFamily: "'Segoe UI', system-ui, sans-serif",
+              minWidth: 0,
             }}
           />
         </Box>
 
-        {/* Send / Mic button - WA style */}
+        {/* Send / Mic */}
         <Box
           component={message.trim() ? "button" : "div"}
           onClick={message.trim() ? submitHandler : undefined}
           sx={{
-            width: 42, height: 42,
+            width: 44, height: 44,
             borderRadius: "50%",
             bgcolor: "#00a884",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
             border: "none",
             flexShrink: 0,
-            transition: "all 0.15s ease",
+            transition: "background 0.15s ease",
             "&:hover": { bgcolor: "#008069" },
-            "&:active": { transform: "scale(0.95)" },
+            "&:active": { transform: "scale(0.94)" },
+            touchAction: "manipulation",
           }}
         >
           {message.trim()

@@ -3,45 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EchoChat</title>
-    <!-- Inter font for clean modern typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Critical for mobile: prevents zooming and ensures correct scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- PWA / mobile app feel -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#008069" />
+    <title>ChatApp</title>
     <style>
-      /* Global resets and base styles */
       *, *::before, *::after {
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
       }
 
-      html, body, #root {
-        margin: 0;
-        padding: 0;
+      html {
+        /* Use dvh for mobile — accounts for browser chrome */
         height: 100%;
-        width: 100%;
-        overflow: hidden;
+        height: -webkit-fill-available;
       }
 
       body {
-        font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        height: -webkit-fill-available;
+        width: 100%;
+        /* Prevent overscroll bounce on iOS */
+        overscroll-behavior: none;
+        font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background: #0f172a;
+        background: #f0f2f5;
       }
 
-      /* Remove default scrollbar in Firefox */
+      #root {
+        height: 100%;
+        height: -webkit-fill-available;
+        display: flex;
+        flex-direction: column;
+        /* Prevent the root from scrolling */
+        overflow: hidden;
+      }
+
+      /* Thin scrollbars on desktop */
       * {
         scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.1) transparent;
+        scrollbar-color: #d1d7db transparent;
+      }
+
+      /* Prevent text selection on UI elements */
+      button, a {
+        -webkit-user-select: none;
+        user-select: none;
       }
 
       /* Smooth focus outlines */
       :focus-visible {
-        outline: 2px solid #0ea5e9;
+        outline: 2px solid #00a884;
         outline-offset: 2px;
       }
     </style>

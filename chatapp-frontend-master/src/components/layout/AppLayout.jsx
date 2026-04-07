@@ -1,4 +1,9 @@
-import { Drawer, Grid, Skeleton, Box } from "@mui/material";
+import { Drawer, Grid, Skeleton, Box, IconButton, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Search as SearchIcon,
+  Notifications as NotificationsIcon,
+  Add as AddIcon,
+} from "@mui/icons-material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,8 +13,8 @@ import {
 import { useErrors, useSocketEvents } from "../../hooks/hook";
 import { getOrSaveFromStorage } from "../../lib/features";
 import { useMyChatsQuery } from "../../redux/api/api";
-import { incrementNotification, setNewMessagesAlert } from "../../redux/reducers/chat";
-import { setIsDeleteMenu, setIsMobile, setSelectedDeleteChat } from "../../redux/reducers/misc";
+import { incrementNotification, setNewMessagesAlert, resetNotificationCount } from "../../redux/reducers/chat";
+import { setIsDeleteMenu, setIsMobile, setSelectedDeleteChat, setIsSearch, setIsNotification, setIsNewGroup } from "../../redux/reducers/misc";
 import { getSocket } from "../../socket";
 import DeleteChatMenu from "../dialogs/DeleteChatMenu";
 import Title from "../shared/Title";
@@ -23,6 +28,8 @@ const AppLayout = () => (WrappedComponent) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const socket = getSocket();
+    const theme = useTheme();
+    const isMobileScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
     const chatId = params.chatId;
     const deleteMenuAnchor = useRef(null);
@@ -30,7 +37,7 @@ const AppLayout = () => (WrappedComponent) => {
 
     const { isMobile } = useSelector((state) => state.misc);
     const { user } = useSelector((state) => state.auth);
-    const { newMessagesAlert } = useSelector((state) => state.chat);
+    const { newMessagesAlert, notificationCount } = useSelector((state) => state.chat);
 
     const { isLoading, data, isError, error, refetch } = useMyChatsQuery("");
 
@@ -40,13 +47,11 @@ const AppLayout = () => (WrappedComponent) => {
       getOrSaveFromStorage({ key: NEW_MESSAGE_ALERT, value: newMessagesAlert });
     }, [newMessagesAlert]);
 
-    const handleDeleteChat = (e, chatId, groupChat) => {
+    const handleDeleteChat = (e, cId, groupChat) => {
       dispatch(setIsDeleteMenu(true));
-      dispatch(setSelectedDeleteChat({ chatId, groupChat }));
+      dispatch(setSelectedDeleteChat({ chatId: cId, groupChat }));
       deleteMenuAnchor.current = e.currentTarget;
     };
-
-    const handleMobileClose = () => dispatch(setIsMobile(false));
 
     const newMessageAlertListener = useCallback((data) => {
       if (data.chatId === chatId) return;
@@ -66,88 +71,136 @@ const AppLayout = () => (WrappedComponent) => {
       setOnlineUsers(data);
     }, []);
 
-    const eventHandlers = {
+    useSocketEvents(socket, {
       [NEW_MESSAGE_ALERT]: newMessageAlertListener,
       [NEW_REQUEST]: newRequestListener,
       [REFETCH_CHATS]: refetchListener,
       [ONLINE_USERS]: onlineUsersListener,
+    });
+
+    const chatListProps = {
+      chats: data?.chats,
+      chatId,
+      handleDeleteChat,
+      newMessagesAlert,
+      onlineUsers,
     };
 
-    useSocketEvents(socket, eventHandlers);
+    /* ── MOBILE LAYOUT ── */
+    if (isMobileScreen) {
+      return (
+        <>
+          <Title />
+          <DeleteChatMenu dispatch={dispatch} deleteMenuAnchor={deleteMenuAnchor} />
 
+          <Box sx={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden", bgcolor: "#ffffff" }}>
+
+            {/* No chatId → show chat list */}
+            {!chatId && (
+              <>
+                {/* Mobile top bar */}
+                <Box sx={{
+                  bgcolor: "#008069", px: 2, py: 1.25,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  flexShrink: 0, minHeight: "3.5rem",
+                }}>
+                  <Box sx={{
+                    color: "white", fontWeight: 700, fontSize: "1.1rem",
+                    fontFamily: "'Segoe UI', system-ui, sans-serif",
+                  }}>
+                    ChatApp
+                  </Box>
+                  <Box sx={{ display: "flex" }}>
+                    <IconButton size="small" onClick={() => dispatch(setIsSearch(true))}
+                      sx={{ color: "rgba(255,255,255,0.85)" }}>
+                      <SearchIcon />
+                    </IconButton>
+                    <IconButton size="small"
+                      onClick={() => { dispatch(setIsNotification(true)); dispatch(resetNotificationCount()); }}
+                      sx={{ color: "rgba(255,255,255,0.85)", position: "relative" }}>
+                      <NotificationsIcon />
+                      {notificationCount > 0 && (
+                        <Box sx={{
+                          position: "absolute", top: 5, right: 5,
+                          width: 15, height: 15, borderRadius: "50%",
+                          bgcolor: "#f02849", display: "flex",
+                          alignItems: "center", justifyContent: "center",
+                          fontSize: "0.55rem", color: "white", fontWeight: 700,
+                          pointerEvents: "none",
+                        }}>
+                          {notificationCount}
+                        </Box>
+                      )}
+                    </IconButton>
+                    <IconButton size="small" onClick={() => dispatch(setIsNewGroup(true))}
+                      sx={{ color: "rgba(255,255,255,0.85)" }}>
+                      <AddIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+
+                {/* Chat list */}
+                <Box sx={{ flex: 1, overflow: "hidden" }}>
+                  {isLoading ? <ChatListSkeleton /> : (
+                    <ChatList w="100%" {...chatListProps} />
+                  )}
+                </Box>
+              </>
+            )}
+
+            {/* Has chatId → show chat full screen */}
+            {chatId && (
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <WrappedComponent
+                  {...props}
+                  chatId={chatId}
+                  user={user}
+                  onBack={() => navigate("/")}
+                  isMobile={true}
+                />
+              </Box>
+            )}
+          </Box>
+        </>
+      );
+    }
+
+    /* ── DESKTOP LAYOUT ── */
     return (
       <>
         <Title />
         <Header />
         <DeleteChatMenu dispatch={dispatch} deleteMenuAnchor={deleteMenuAnchor} />
 
-        {/* Mobile drawer - WhatsApp style */}
-        {isLoading ? <Skeleton /> : (
+        {/* Tablet drawer (sm screens with hamburger) */}
+        {!isLoading && (
           <Drawer
             open={isMobile}
-            onClose={handleMobileClose}
-            PaperProps={{
-              sx: {
-                bgcolor: "#ffffff",
-                borderRight: "none",
-                width: "85vw",
-                maxWidth: 340,
-              },
-            }}
+            onClose={() => dispatch(setIsMobile(false))}
+            PaperProps={{ sx: { bgcolor: "#ffffff", width: "85vw", maxWidth: 340 } }}
           >
-            <ChatList
-              w="100%"
-              chats={data?.chats}
-              chatId={chatId}
-              handleDeleteChat={handleDeleteChat}
-              newMessagesAlert={newMessagesAlert}
-              onlineUsers={onlineUsers}
-            />
+            <ChatList w="100%" {...chatListProps} />
           </Drawer>
         )}
 
         <Grid container height={"calc(100vh - 3.75rem)"} sx={{ overflow: "hidden" }}>
-          {/* Sidebar — WhatsApp left panel */}
-          <Grid
-            item sm={4} md={3}
-            sx={{
-              display: { xs: "none", sm: "block" },
-              bgcolor: "#ffffff",
-              borderRight: "1px solid #e9edef",
-            }}
+          {/* Sidebar */}
+          <Grid item sm={4} md={3}
+            sx={{ display: { xs: "none", sm: "block" }, bgcolor: "#ffffff", borderRight: "1px solid #e9edef" }}
             height={"100%"}
           >
-            {isLoading ? <ChatListSkeleton /> : (
-              <ChatList
-                chats={data?.chats}
-                chatId={chatId}
-                handleDeleteChat={handleDeleteChat}
-                newMessagesAlert={newMessagesAlert}
-                onlineUsers={onlineUsers}
-              />
-            )}
+            {isLoading ? <ChatListSkeleton /> : <ChatList {...chatListProps} />}
           </Grid>
 
-          {/* Main chat area */}
-          <Grid
-            item xs={12} sm={8} md={5} lg={6}
-            height={"100%"}
-            sx={{ bgcolor: "#efeae2", display: "flex", flexDirection: "column" }}
-          >
+          {/* Chat area */}
+          <Grid item xs={12} sm={8} md={5} lg={6} height={"100%"}
+            sx={{ bgcolor: "#efeae2", display: "flex", flexDirection: "column" }}>
             <WrappedComponent {...props} chatId={chatId} user={user} />
           </Grid>
 
           {/* Profile panel */}
-          <Grid
-            item md={4} lg={3}
-            height={"100%"}
-            sx={{
-              display: { xs: "none", md: "block" },
-              bgcolor: "#ffffff",
-              borderLeft: "1px solid #e9edef",
-              overflowY: "auto",
-            }}
-          >
+          <Grid item md={4} lg={3} height={"100%"}
+            sx={{ display: { xs: "none", md: "block" }, bgcolor: "#ffffff", borderLeft: "1px solid #e9edef", overflowY: "auto" }}>
             <Profile user={user} />
           </Grid>
         </Grid>
@@ -158,15 +211,12 @@ const AppLayout = () => (WrappedComponent) => {
 
 const ChatListSkeleton = () => (
   <Box>
-    {/* Search bar skeleton */}
     <Box sx={{ p: 1.5, bgcolor: "#f0f2f5" }}>
       <Skeleton variant="rounded" height={38} sx={{ borderRadius: "8px", bgcolor: "#e9edef" }} />
     </Box>
-    {/* Chat items */}
     {Array.from({ length: 9 }).map((_, i) => (
       <Box key={i} display="flex" alignItems="center" gap={1.5} px={2} py={1.5}
-        sx={{ borderBottom: "1px solid #f5f6f6" }}
-      >
+        sx={{ borderBottom: "1px solid #f5f6f6" }}>
         <Skeleton variant="circular" width={50} height={50} sx={{ bgcolor: "#e9edef", flexShrink: 0 }} />
         <Box flex={1}>
           <Box display="flex" justifyContent="space-between" mb={0.5}>
