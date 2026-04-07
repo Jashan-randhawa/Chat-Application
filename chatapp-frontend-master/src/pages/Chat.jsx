@@ -6,10 +6,6 @@ import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
   Mic as MicIcon,
-  MoreVert as MoreVertIcon,
-  Search as SearchIcon,
-  Phone as PhoneIcon,
-  Videocam as VideoIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { InputBox } from "../components/styles/StyledComponents";
@@ -63,7 +59,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
 
   const members = chatDetails?.data?.chat?.members;
   const chatName = chatDetails?.data?.chat?.name;
-  const isGroupChat = chatDetails?.data?.chat?.groupChat;
 
   const messageOnChange = (e) => {
     setMessage(e.target.value);
@@ -284,18 +279,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           </IconButton>
         )}
 
-        {/* Avatar */}
-        <Box sx={{
-          width: 38, height: 38, borderRadius: "50%",
-          bgcolor: "rgba(255,255,255,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "0.95rem", color: "white", fontWeight: 700, flexShrink: 0,
-        }}>
-          {chatName?.[0]?.toUpperCase() || "C"}
-        </Box>
-
-        {/* Name + status */}
-        <Box flex={1} minWidth={0}>
+        {/* Name only (1:1 chat header simplified) */}
+        <Box flex={1} minWidth={0} display="flex" alignItems="center">
           <Typography sx={{
             fontWeight: 600, fontSize: "0.9375rem",
             color: "white", lineHeight: 1.2,
@@ -304,25 +289,6 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           }}>
             {chatName || "Chat"}
           </Typography>
-          <Typography sx={{
-            fontSize: "0.72rem", color: "rgba(255,255,255,0.75)",
-            fontFamily: "'Segoe UI', system-ui, sans-serif",
-          }}>
-            {userTyping
-              ? <span style={{ color: "#d1fae5" }}>typing...</span>
-              : isGroupChat ? "Group chat" : "click here for info"
-            }
-          </Typography>
-        </Box>
-
-        {/* Right action icons */}
-        <Box display="flex">
-          {[VideoIcon, PhoneIcon, SearchIcon, MoreVertIcon].map((Icon, i) => (
-            <IconButton key={i} size="small"
-              sx={{ color: "rgba(255,255,255,0.85)", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
-              <Icon sx={{ fontSize: 20 }} />
-            </IconButton>
-          ))}
         </Box>
       </Box>
 
