@@ -39,6 +39,7 @@ const adminSecretKey = process.env.ADMIN_SECRET_KEY || "adsasdsdfsdfsdfd";
 const userSocketIDs = new Map();
 const onlineUsers = new Set();
 const typingRateLimiter = new Map();
+const typingAutoStopTimeouts = new Map();
 
 connectDB(mongoURI);
 cloudinary.config({
@@ -139,21 +140,72 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on(START_TYPING, ({ members, chatId }) => {
-    const socketLimiterKey = `${socket.id}:${chatId}`;
-    const lastEventAt = typingRateLimiter.get(socketLimiterKey) || 0;
-    const now = Date.now();
+  socket.on(START_TYPING, ({ chatId }) => {
+    const handleStartTyping = async () => {
+      if (!chatId) return;
 
-    if (now - lastEventAt < 500) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
 
-    typingRateLimiter.set(socketLimiterKey, now);
-    const membersSockets = getSockets(members);
-    socket.to(membersSockets).emit(START_TYPING, { chatId });
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const socketLimiterKey = `${socket.id}:${chatId}`;
+      const lastEventAt = typingRateLimiter.get(socketLimiterKey) || 0;
+      const now = Date.now();
+
+      if (now - lastEventAt < 500) return;
+
+      typingRateLimiter.set(socketLimiterKey, now);
+
+      const membersSockets = getSockets(chat.members);
+      socket.to(membersSockets).emit(START_TYPING, { chatId });
+
+      const timeoutKey = `${user._id.toString()}:${chatId}`;
+      const existingTimeout = typingAutoStopTimeouts.get(timeoutKey);
+      if (existingTimeout) clearTimeout(existingTimeout);
+
+      const timeoutId = setTimeout(() => {
+        socket.to(membersSockets).emit(STOP_TYPING, { chatId });
+        typingAutoStopTimeouts.delete(timeoutKey);
+      }, 5000);
+
+      typingAutoStopTimeouts.set(timeoutKey, timeoutId);
+    };
+
+    handleStartTyping().catch((error) =>
+      console.error("START_TYPING socket error:", error)
+    );
   });
 
-  socket.on(STOP_TYPING, ({ members, chatId }) => {
-    const membersSockets = getSockets(members);
-    socket.to(membersSockets).emit(STOP_TYPING, { chatId });
+  socket.on(STOP_TYPING, ({ chatId }) => {
+    const handleStopTyping = async () => {
+      if (!chatId) return;
+
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const timeoutKey = `${user._id.toString()}:${chatId}`;
+      const existingTimeout = typingAutoStopTimeouts.get(timeoutKey);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+        typingAutoStopTimeouts.delete(timeoutKey);
+      }
+
+      const membersSockets = getSockets(chat.members);
+      socket.to(membersSockets).emit(STOP_TYPING, { chatId });
+    };
+
+    handleStopTyping().catch((error) =>
+      console.error("STOP_TYPING socket error:", error)
+    );
   });
 
   socket.on(CHAT_JOINED, ({ userId, members }) => {
@@ -175,6 +227,12 @@ io.on("connection", (socket) => {
     onlineUsers.delete(user._id.toString());
     for (const key of typingRateLimiter.keys()) {
       if (key.startsWith(`${socket.id}:`)) typingRateLimiter.delete(key);
+    }
+    for (const key of typingAutoStopTimeouts.keys()) {
+      if (key.startsWith(`${user._id.toString()}:`)) {
+        clearTimeout(typingAutoStopTimeouts.get(key));
+        typingAutoStopTimeouts.delete(key);
+      }
     }
     socket.broadcast.emit(ONLINE_USERS, Array.from(onlineUsers));
   });

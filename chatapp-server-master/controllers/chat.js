@@ -107,7 +107,11 @@ const addMembers = TryCatch(async (req, res, next) => {
   const allNewMembers = await Promise.all(allNewMembersPromise);
 
   const uniqueMembers = allNewMembers
-    .filter((i) => !chat.members.includes(i._id.toString()))
+    .filter(
+      (i) =>
+        i &&
+        !chat.members.some((member) => member.toString() === i._id.toString())
+    )
     .map((i) => i._id);
 
   chat.members.push(...uniqueMembers);
@@ -340,7 +344,10 @@ const deleteChat = TryCatch(async (req, res, next) => {
       new ErrorHandler("You are not allowed to delete the group", 403)
     );
 
-  if (!chat.groupChat && !chat.members.includes(req.user.toString())) {
+  if (
+    !chat.groupChat &&
+    !chat.members.some((member) => member.toString() === req.user.toString())
+  ) {
     return next(
       new ErrorHandler("You are not allowed to delete the chat", 403)
     );
@@ -384,7 +391,7 @@ const getMessages = TryCatch(async (req, res, next) => {
 
   if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
-  if (!chat.members.includes(req.user.toString()))
+  if (!chat.members.some((member) => member.toString() === req.user.toString()))
     return next(
       new ErrorHandler("You are not allowed to access this chat", 403)
     );

@@ -21,7 +21,9 @@ const connectDB = (uri) => {
 };
 
 const sendToken = (res, user, code, message) => {
-  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "15d",
+  });
 
   return res.status(code).cookie("chattu-token", token, cookieOptions).json({
     success: true,
@@ -76,11 +78,13 @@ const deletFilesFromCloudinary = async (public_ids) => {
     chunks.push(public_ids.slice(i, i + chunkSize));
   }
 
+  const resourceTypes = ["image", "raw", "video"];
+
   await Promise.all(
-    chunks.map((chunk) =>
-      cloudinary.api.delete_resources(chunk, {
-        resource_type: "image",
-      })
+    chunks.flatMap((chunk) =>
+      resourceTypes.map((resource_type) =>
+        cloudinary.api.delete_resources(chunk, { resource_type })
+      )
     )
   );
 };
