@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import {
   AppBar,
   Backdrop,
@@ -7,9 +8,10 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  keyframes,
+  styled,
 } from "@mui/material";
-import React, { Suspense, lazy, useState } from "react";
-import { orange } from "../../constants/color";
+import { Suspense, lazy } from "react";
 import {
   Add as AddIcon,
   Menu as MenuIcon,
@@ -31,10 +33,24 @@ import {
   setIsSearch,
 } from "../../redux/reducers/misc";
 import { resetNotificationCount } from "../../redux/reducers/chat";
+import { brandGradient } from "../../constants/color";
 
 const SearchDialog = lazy(() => import("../specific/Search"));
 const NotifcationDialog = lazy(() => import("../specific/Notifications"));
 const NewGroupDialog = lazy(() => import("../specific/NewGroup"));
+
+const pulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(255,87,87,0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(255,87,87,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,87,87,0); }
+`;
+
+const AnimatedBadge = styled(Badge)(() => ({
+  "& .MuiBadge-badge": {
+    animation: `${pulse} 1.6s infinite`,
+    transformOrigin: "center",
+  },
+}));
 
 const Header = () => {
   const navigate = useNavigate();
@@ -78,7 +94,8 @@ const Header = () => {
         <AppBar
           position="static"
           sx={{
-            bgcolor: orange,
+            background: brandGradient,
+            boxShadow: "0 10px 26px rgba(17, 26, 52, 0.38)",
           }}
         >
           <Toolbar>
@@ -86,6 +103,9 @@ const Header = () => {
               variant="h6"
               sx={{
                 display: { xs: "none", sm: "block" },
+                fontFamily: "Sora, sans-serif",
+                fontWeight: 600,
+                letterSpacing: "0.2px",
               }}
             >
               Echo Chat
@@ -165,11 +185,22 @@ const Header = () => {
 const IconBtn = ({ title, icon, onClick, value }) => {
   return (
     <Tooltip title={title}>
-      <IconButton color="inherit" size="large" onClick={onClick}>
+      <IconButton
+        color="inherit"
+        size="large"
+        onClick={onClick}
+        sx={{
+          transition: "transform 0.2s ease, background-color 0.2s ease",
+          "&:hover": {
+            transform: "translateY(-1px)",
+            backgroundColor: "rgba(255,255,255,0.15)",
+          },
+        }}
+      >
         {value ? (
-          <Badge badgeContent={value} color="error">
+          <AnimatedBadge badgeContent={value} color="error">
             {icon}
-          </Badge>
+          </AnimatedBadge>
         ) : (
           icon
         )}

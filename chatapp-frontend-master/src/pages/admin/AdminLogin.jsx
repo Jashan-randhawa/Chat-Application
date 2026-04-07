@@ -4,19 +4,20 @@ import {
   Container,
   Paper,
   TextField,
-  Typography
+  Typography,
+  alpha,
+  useTheme,
 } from "@mui/material";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { bgGradient } from "../../constants/color";
+import { uiTokens } from "../../design-system/tokens";
 import { adminLogin, getAdmin } from "../../redux/thunks/admin";
 
 const AdminLogin = () => {
+  const theme = useTheme();
   const { isAdmin } = useSelector((state) => state.auth);
-
   const dispatch = useDispatch();
-
   const secretKey = useInputValidation("");
 
   const submitHandler = (e) => {
@@ -31,16 +32,12 @@ const AdminLogin = () => {
   if (isAdmin) return <Navigate to="/admin/dashboard" />;
 
   return (
-    <div
-      style={{
-        backgroundImage: bgGradient,
-      }}
-    >
+    <div style={{ backgroundImage: uiTokens.gradients.page }}>
       <Container
-        component={"main"}
+        component="main"
         maxWidth="xs"
         sx={{
-          height: "100vh",
+          minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -49,19 +46,21 @@ const AdminLogin = () => {
         <Paper
           elevation={3}
           sx={{
-            padding: 4,
+            width: "100%",
+            p: 4,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            bgcolor: alpha(theme.palette.background.paper, 0.95),
           }}
         >
-          <Typography variant="h5">Admin Login</Typography>
+          <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+            Admin Login
+          </Typography>
           <form
-            style={{
-              width: "100%",
-              marginTop: "1rem",
-            }}
+            style={{ width: "100%", marginTop: "1rem" }}
             onSubmit={submitHandler}
+            aria-label="Admin login form"
           >
             <TextField
               required
@@ -72,16 +71,15 @@ const AdminLogin = () => {
               variant="outlined"
               value={secretKey.value}
               onChange={secretKey.changeHandler}
+              inputProps={{ "aria-label": "Admin secret key" }}
             />
 
             <Button
-              sx={{
-                marginTop: "1rem",
-              }}
+              sx={{ marginTop: "1rem" }}
               variant="contained"
-              color="primary"
               type="submit"
               fullWidth
+              aria-label="Admin login"
             >
               Login
             </Button>

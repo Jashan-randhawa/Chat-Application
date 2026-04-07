@@ -1,10 +1,30 @@
-export const orange = "#ea7070";
-export const orangeLight = "rgba(234, 112, 112,0.2)";
+import { alpha } from "@mui/material/styles";
+import { uiTokens } from "../design-system/tokens";
 
-export const grayColor = "rgba(247,247,247,1)";
-export const lightBlue = "#2694ab";
-export const matBlack = "#1c1c1c";
-export const bgGradient = "linear-gradient(rgb(255 225 209), rgb(249 159 159))";
+export const brandIndigo = uiTokens.colors.primary.main;
+export const brandIndigoDark = uiTokens.colors.primary.dark;
+export const brandTeal = uiTokens.colors.secondary.main;
 
-export const purple = "rgba(75,12,192,1)";
-export const purpleLight = "rgba(75,12,192,0.2)";
+export const navyDark = uiTokens.colors.neutral[900];
+export const navySurface = uiTokens.colors.surfaces.sidebarLight;
+export const profilePanel = uiTokens.colors.surfaces.profilePanel;
+
+export const coolWhite = uiTokens.colors.neutral[50];
+export const cardWhite = uiTokens.colors.neutral[0];
+export const mutedText = uiTokens.colors.neutral[500];
+export const strongText = uiTokens.colors.neutral[800];
+
+export const glassStroke = "rgba(255,255,255,0.18)";
+export const sidebarDivider = "rgba(255,255,255,0.08)";
+
+export const brandGradient = uiTokens.gradients.brand;
+export const pageGradient = uiTokens.gradients.page;
+
+export const orange = brandIndigo;
+export const orangeLight = alpha(brandIndigo, 0.2);
+export const grayColor = coolWhite;
+export const lightBlue = brandTeal;
+export const matBlack = navyDark;
+export const bgGradient = pageGradient;
+export const purple = brandIndigoDark;
+export const purpleLight = alpha(brandIndigo, 0.2);

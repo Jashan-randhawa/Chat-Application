@@ -1,5 +1,5 @@
-import { Drawer, Grid, Skeleton } from "@mui/material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Drawer, Grid, alpha, useTheme } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -26,9 +26,12 @@ import Title from "../shared/Title";
 import ChatList from "../specific/ChatList";
 import Profile from "../specific/Profile";
 import Header from "./Header";
+import { LayoutLoader } from "./Loaders";
+import { uiTokens } from "../../design-system/tokens";
 
 const AppLayout = () => (WrappedComponent) => {
-  return (props) => {
+  function AppLayoutWrapper(props) {
+    const theme = useTheme();
     const params = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -51,20 +54,20 @@ const AppLayout = () => (WrappedComponent) => {
       getOrSaveFromStorage({ key: NEW_MESSAGE_ALERT, value: newMessagesAlert });
     }, [newMessagesAlert]);
 
-    const handleDeleteChat = (e, chatId, groupChat) => {
+    const handleDeleteChat = (e, selectedChatId, groupChat) => {
       dispatch(setIsDeleteMenu(true));
-      dispatch(setSelectedDeleteChat({ chatId, groupChat }));
+      dispatch(setSelectedDeleteChat({ chatId: selectedChatId, groupChat }));
       deleteMenuAnchor.current = e.currentTarget;
     };
 
     const handleMobileClose = () => dispatch(setIsMobile(false));
 
     const newMessageAlertListener = useCallback(
-      (data) => {
-        if (data.chatId === chatId) return;
-        dispatch(setNewMessagesAlert(data));
+      (incoming) => {
+        if (incoming.chatId === chatId) return;
+        dispatch(setNewMessagesAlert(incoming));
       },
-      [chatId]
+      [chatId, dispatch]
     );
 
     const newRequestListener = useCallback(() => {
@@ -76,8 +79,8 @@ const AppLayout = () => (WrappedComponent) => {
       navigate("/");
     }, [refetch, navigate]);
 
-    const onlineUsersListener = useCallback((data) => {
-      setOnlineUsers(data);
+    const onlineUsersListener = useCallback((list) => {
+      setOnlineUsers(list);
     }, []);
 
     const eventHandlers = {
@@ -100,11 +103,11 @@ const AppLayout = () => (WrappedComponent) => {
         />
 
         {isLoading ? (
-          <Skeleton />
+          <LayoutLoader />
         ) : (
           <Drawer open={isMobile} onClose={handleMobileClose}>
             <ChatList
-              w="70vw"
+              w="74vw"
               chats={data?.chats}
               chatId={chatId}
               handleDeleteChat={handleDeleteChat}
@@ -114,19 +117,24 @@ const AppLayout = () => (WrappedComponent) => {
           </Drawer>
         )}
 
-        <Grid container height={"calc(100vh - 4rem)"}>
-          <Grid
-            item
-            sm={4}
-            md={3}
-            sx={{
-              display: { xs: "none", sm: "block" },
-            }}
-            height={"100%"}
-          >
-            {isLoading ? (
-              <Skeleton />
-            ) : (
+        {isLoading ? (
+          <LayoutLoader />
+        ) : (
+          <Grid container height="calc(100vh - 4rem)">
+            <Grid
+              item
+              sm={4}
+              md={3}
+              sx={{
+                display: { xs: "none", sm: "block" },
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.background.paper
+                    : uiTokens.colors.surfaces.sidebar,
+                borderRight: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+              }}
+              height="100%"
+            >
               <ChatList
                 chats={data?.chats}
                 chatId={chatId}
@@ -134,29 +142,47 @@ const AppLayout = () => (WrappedComponent) => {
                 newMessagesAlert={newMessagesAlert}
                 onlineUsers={onlineUsers}
               />
-            )}
-          </Grid>
-          <Grid item xs={12} sm={8} md={5} lg={6} height={"100%"}>
-            <WrappedComponent {...props} chatId={chatId} user={user} />
-          </Grid>
+            </Grid>
+            <Grid
+              item
+              xs={12}
+              sm={8}
+              md={5}
+              lg={6}
+              height="100%"
+              sx={{
+                backgroundColor: theme.palette.background.default,
+                borderRight: { md: `1px solid ${theme.palette.divider}` },
+              }}
+            >
+              <WrappedComponent {...props} chatId={chatId} user={user} />
+            </Grid>
 
-          <Grid
-            item
-            md={4}
-            lg={3}
-            height={"100%"}
-            sx={{
-              display: { xs: "none", md: "block" },
-              padding: "2rem",
-              bgcolor: "rgba(0,0,0,0.85)",
-            }}
-          >
-            <Profile user={user} />
+            <Grid
+              item
+              md={4}
+              lg={3}
+              height="100%"
+              sx={{
+                display: { xs: "none", md: "block" },
+                padding: "2rem",
+                bgcolor:
+                  theme.palette.mode === "dark"
+                    ? uiTokens.colors.surfaces.profilePanel
+                    : uiTokens.colors.surfaces.sidebarLight,
+              }}
+            >
+              <Profile user={user} />
+            </Grid>
           </Grid>
-        </Grid>
+        )}
       </>
     );
-  };
+  }
+
+  AppLayoutWrapper.displayName = `AppLayout(${WrappedComponent.displayName || WrappedComponent.name || "Component"})`;
+
+  return AppLayoutWrapper;
 };
 
 export default AppLayout;

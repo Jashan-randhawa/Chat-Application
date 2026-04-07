@@ -1,20 +1,19 @@
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import AppLayout from "../components/layout/AppLayout";
-import { IconButton, Skeleton, Stack } from "@mui/material";
-import { grayColor, orange } from "../constants/color";
+/* eslint-disable react/prop-types */
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { IconButton, Stack, Typography, alpha, useTheme } from "@mui/material";
 import {
   AttachFile as AttachFileIcon,
   Send as SendIcon,
+  Forum as ForumIcon,
 } from "@mui/icons-material";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { useInfiniteScrollTop } from "6pp";
+import AppLayout from "../components/layout/AppLayout";
 import { InputBox } from "../components/styles/StyledComponents";
 import FileMenu from "../components/dialogs/FileMenu";
 import MessageComponent from "../components/shared/MessageComponent";
+import { LayoutLoader, TypingLoader } from "../components/layout/Loaders";
 import { getSocket } from "../socket";
 import {
   ALERT,
@@ -26,14 +25,11 @@ import {
 } from "../constants/events";
 import { useChatDetailsQuery, useGetMessagesQuery } from "../redux/api/api";
 import { useErrors, useSocketEvents } from "../hooks/hook";
-import { useInfiniteScrollTop } from "6pp";
-import { useDispatch } from "react-redux";
 import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
-import { TypingLoader } from "../components/layout/Loaders";
-import { useNavigate } from "react-router-dom";
 
 const Chat = ({ chatId, user }) => {
+  const theme = useTheme();
   const socket = getSocket();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -51,7 +47,6 @@ const Chat = ({ chatId, user }) => {
   const typingTimeout = useRef(null);
 
   const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
-
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
 
   const { data: oldMessages, setData: setOldMessages } = useInfiniteScrollTop(
@@ -82,7 +77,7 @@ const Chat = ({ chatId, user }) => {
     typingTimeout.current = setTimeout(() => {
       socket.emit(STOP_TYPING, { members, chatId });
       setIamTyping(false);
-    }, [2000]);
+    }, 2000);
   };
 
   const handleFileOpen = (e) => {
@@ -92,15 +87,15 @@ const Chat = ({ chatId, user }) => {
 
   const submitHandler = (e) => {
     e.preventDefault();
-
     if (!message.trim()) return;
 
-    // Emitting the message to the server
     socket.emit(NEW_MESSAGE, { chatId, members, message });
     setMessage("");
   };
 
   useEffect(() => {
+    if (!chatId || !user?._id || !members) return;
+
     socket.emit(CHAT_JOINED, { userId: user._id, members });
     dispatch(removeNewMessagesAlert(chatId));
 
@@ -111,21 +106,22 @@ const Chat = ({ chatId, user }) => {
       setPage(1);
       socket.emit(CHAT_LEAVED, { userId: user._id, members });
     };
-  }, [chatId]);
+  }, [chatId, user?._id, members, socket, dispatch, setOldMessages]);
 
   useEffect(() => {
-    if (bottomRef.current)
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
-    if (chatDetails.isError) return navigate("/");
-  }, [chatDetails.isError]);
+    if (chatDetails.isError) {
+      navigate("/");
+      return;
+    }
+  }, [chatDetails.isError, navigate]);
 
   const newMessagesListener = useCallback(
     (data) => {
       if (data.chatId !== chatId) return;
-
       setMessages((prev) => [...prev, data.message]);
     },
     [chatId]
@@ -134,7 +130,6 @@ const Chat = ({ chatId, user }) => {
   const startTypingListener = useCallback(
     (data) => {
       if (data.chatId !== chatId) return;
-
       setUserTyping(true);
     },
     [chatId]
@@ -153,77 +148,150 @@ const Chat = ({ chatId, user }) => {
       if (data.chatId !== chatId) return;
       const messageForAlert = {
         content: data.message,
-        sender: {
-          _id: "djasdhajksdhasdsadasdas",
-          name: "Admin",
-        },
+        sender: { _id: "djasdhajksdhasdsadasdas", name: "Admin" },
         chat: chatId,
         createdAt: new Date().toISOString(),
       };
-
       setMessages((prev) => [...prev, messageForAlert]);
     },
     [chatId]
   );
 
-  const eventHandler = {
+  useSocketEvents(socket, {
     [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
-  };
-
-  useSocketEvents(socket, eventHandler);
+  });
 
   useErrors(errors);
 
   const allMessages = [...oldMessages, ...messages];
+  const showMessagesLoader =
+    chatId && (oldMessagesChunk.isLoading || oldMessagesChunk.isFetching) && allMessages.length === 0;
 
-  return chatDetails.isLoading ? (
-    <Skeleton />
-  ) : (
+  if (chatDetails.isLoading) return <LayoutLoader />;
+
+  return (
     <Fragment>
       <Stack
         ref={containerRef}
-        boxSizing={"border-box"}
-        padding={"1rem"}
-        spacing={"1rem"}
-        bgcolor={grayColor}
-        height={"90%"}
+        boxSizing="border-box"
+        padding={{ xs: "0.75rem", sm: "1rem 1.1rem" }}
+        spacing="0.8rem"
+        bgcolor={theme.palette.background.default}
+        height="90%"
         sx={{
           overflowX: "hidden",
           overflowY: "auto",
+          overscrollBehavior: "contain",
+          scrollbarWidth: "thin",
+          "&::-webkit-scrollbar": { width: "8px" },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: alpha(theme.palette.primary.main, 0.28),
+            borderRadius: "999px",
+          },
+          backgroundImage: `radial-gradient(circle at 2px 2px, ${alpha(
+            theme.palette.primary.main,
+            0.11
+          )} 1px, transparent 0)`,
+          backgroundSize: "24px 24px",
         }}
       >
-        {allMessages.map((i) => (
-          <MessageComponent key={i._id} message={i} user={user} />
-        ))}
+        {!chatId ? (
+          <Stack
+            height="100%"
+            justifyContent="center"
+            alignItems="center"
+            color={alpha(theme.palette.text.primary, 0.72)}
+            spacing={1.2}
+          >
+            <ForumIcon sx={{ fontSize: 56, color: alpha(theme.palette.primary.main, 0.8) }} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Select a conversation
+            </Typography>
+            <Typography variant="body2">
+              Choose a chat from the sidebar to start messaging.
+            </Typography>
+          </Stack>
+        ) : showMessagesLoader ? (
+          <Stack spacing={1.2}>
+            {Array.from({ length: 7 }).map((_, index) => (
+              <Stack
+                key={`message-skeleton-${index}`}
+                sx={{
+                  width: index % 2 ? "72%" : "58%",
+                  ml: index % 2 ? "auto" : 0,
+                  height: "2.9rem",
+                  borderRadius: index % 2 ? "1.1rem 1.1rem 0.3rem 1.1rem" : "1.1rem 1.1rem 1.1rem 0.3rem",
+                  background:
+                    index % 2
+                      ? `linear-gradient(120deg, ${alpha(theme.palette.primary.main, 0.2)}, ${alpha(
+                          theme.palette.primary.main,
+                          0.12
+                        )})`
+                      : theme.palette.background.paper,
+                  boxShadow: "0 8px 18px rgba(17,26,52,0.08)",
+                }}
+              />
+            ))}
+          </Stack>
+        ) : allMessages.length === 0 ? (
+          <Stack
+            height="100%"
+            justifyContent="center"
+            alignItems="center"
+            color={alpha(theme.palette.text.primary, 0.72)}
+            spacing={1.2}
+          >
+            <ForumIcon sx={{ fontSize: 56, color: alpha(theme.palette.primary.main, 0.8) }} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              No messages yet
+            </Typography>
+            <Typography variant="body2">
+              Send the first message and start this conversation.
+            </Typography>
+          </Stack>
+        ) : (
+          allMessages.map((item) => (
+            <MessageComponent key={item._id} message={item} user={user} />
+          ))
+        )}
 
         {userTyping && <TypingLoader />}
-
         <div ref={bottomRef} />
       </Stack>
 
-      <form
-        style={{
-          height: "10%",
-        }}
-        onSubmit={submitHandler}
-      >
+      <form style={{ height: "10%" }} onSubmit={submitHandler} aria-label="Message composer">
         <Stack
-          direction={"row"}
-          height={"100%"}
-          padding={"1rem"}
-          alignItems={"center"}
-          position={"relative"}
+          direction="row"
+          height="100%"
+          padding={{ xs: "0.75rem", sm: "0.9rem 1rem" }}
+          alignItems="center"
+          position="relative"
+          sx={{
+            background: `linear-gradient(120deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(
+              theme.palette.secondary.main,
+              0.08
+            )})`,
+            borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+            gap: { xs: 0.3, sm: 0 },
+          }}
         >
           <IconButton
             sx={{
               position: "absolute",
-              left: "1.5rem",
+              left: { xs: "1rem", sm: "1.5rem" },
               rotate: "30deg",
+              color: alpha(theme.palette.text.primary, 0.75),
+              transition: "transform 0.2s ease, color 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                color: alpha(theme.palette.primary.dark, 0.95),
+              },
             }}
             onClick={handleFileOpen}
+            aria-label="Open file attachment menu"
           >
             <AttachFileIcon />
           </IconButton>
@@ -232,18 +300,28 @@ const Chat = ({ chatId, user }) => {
             placeholder="Type Message Here..."
             value={message}
             onChange={messageOnChange}
+            aria-label="Type a message"
           />
 
           <IconButton
             type="submit"
+            disabled={!message.trim()}
+            aria-label={message.trim() ? "Send message" : "Send message (disabled when message is empty)"}
             sx={{
               rotate: "-30deg",
-              bgcolor: orange,
-              color: "white",
+              bgcolor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
               marginLeft: "1rem",
-              padding: "0.5rem",
+              padding: "0.6rem",
+              opacity: message.trim() ? 1 : 0.5,
+              transition: "transform 0.2s ease, background-color 0.2s ease",
               "&:hover": {
-                bgcolor: "error.dark",
+                bgcolor: theme.palette.primary.dark,
+                transform: "translateY(-1px)",
+              },
+              "&.Mui-disabled": {
+                bgcolor: alpha(theme.palette.primary.main, 0.45),
+                color: alpha(theme.palette.primary.contrastText, 0.85),
               },
             }}
           >

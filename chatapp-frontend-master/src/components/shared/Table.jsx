@@ -1,19 +1,16 @@
-import React from "react";
+/* eslint-disable react/prop-types */
 import { DataGrid } from "@mui/x-data-grid";
-import { Container, Paper, Typography } from "@mui/material";
-import { matBlack } from "../../constants/color";
+import { Container, Paper, Typography, alpha, useTheme } from "@mui/material";
 
 const Table = ({ rows, columns, heading, rowHeight = 52 }) => {
+  const theme = useTheme();
+
   return (
-    <Container
-      sx={{
-        height: "100vh",
-      }}
-    >
+    <Container sx={{ height: "100vh" }}>
       <Paper
         elevation={3}
         sx={{
-          padding: "1rem 4rem",
+          padding: { xs: "1rem", sm: "1rem 2rem", md: "1rem 4rem" },
           borderRadius: "1rem",
           margin: "auto",
           width: "100%",
@@ -23,7 +20,7 @@ const Table = ({ rows, columns, heading, rowHeight = 52 }) => {
         }}
       >
         <Typography
-          textAlign={"center"}
+          textAlign="center"
           variant="h4"
           sx={{
             margin: "2rem",
@@ -36,14 +33,15 @@ const Table = ({ rows, columns, heading, rowHeight = 52 }) => {
           rows={rows}
           columns={columns}
           rowHeight={rowHeight}
-          style={{
-            height: "80%",
-          }}
+          style={{ height: "80%" }}
           sx={{
             border: "none",
-            ".table-header": {
-              bgcolor: matBlack,
-              color: "white",
+            "& .table-header": {
+              bgcolor: theme.palette.primary.dark,
+              color: theme.palette.primary.contrastText,
+            },
+            "& .MuiDataGrid-row:hover": {
+              backgroundColor: alpha(theme.palette.primary.main, 0.04),
             },
           }}
         />
