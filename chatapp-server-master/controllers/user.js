@@ -84,10 +84,11 @@ const searchUser = TryCatch(async (req, res) => {
 
   //  extracting All Users from my chats means friends or people I have chatted with
   const allUsersFromMyChats = myChats.flatMap((chat) => chat.members);
+  const excludedUsers = [...allUsersFromMyChats, req.user];
 
   // Finding all users except me and my friends
   const allUsersExceptMeAndFriends = await User.find({
-    _id: { $nin: allUsersFromMyChats },
+    _id: { $nin: excludedUsers },
     name: { $regex: name, $options: "i" },
   });
 
@@ -214,7 +215,8 @@ const getMyFriends = TryCatch(async (req, res) => {
     const chat = await Chat.findById(chatId);
 
     const availableFriends = friends.filter(
-      (friend) => !chat.members.includes(friend._id)
+      (friend) =>
+        !chat.members.some((member) => member.toString() === friend._id.toString())
     );
 
     return res.status(200).json({
