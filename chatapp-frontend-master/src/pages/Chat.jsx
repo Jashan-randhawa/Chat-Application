@@ -42,7 +42,7 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const readReceiptQueueRef = useRef(new Set());
   const [markMessageRead] = useMarkMessageReadMutation();
 
-  const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
+  const chatDetails = useChatDetailsQuery({ chatId, populate: true, skip: !chatId });
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
 
   const { data: oldMessages, setData: setOldMessages } = useInfiniteScrollTop(
@@ -58,7 +58,13 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   ];
 
   const members = chatDetails?.data?.chat?.members;
-  const chatName = chatDetails?.data?.chat?.name;
+  const isGroupChat = chatDetails?.data?.chat?.groupChat;
+  const receiver = members?.find(
+    (member) => member?._id?.toString() !== user?._id?.toString()
+  );
+  const chatName = isGroupChat
+    ? chatDetails?.data?.chat?.name
+    : receiver?.name || chatDetails?.data?.chat?.name;
 
   const messageOnChange = (e) => {
     setMessage(e.target.value);
