@@ -8,6 +8,7 @@ import {
 } from "../utils/features.js";
 import {
   ALERT,
+  MESSAGE_READ,
   NEW_MESSAGE,
   NEW_MESSAGE_ALERT,
   REFETCH_CHATS,
@@ -407,6 +408,36 @@ const getMessages = TryCatch(async (req, res, next) => {
   });
 });
 
+const markMessageAsRead = TryCatch(async (req, res, next) => {
+  const messageId = req.params.id;
+
+  const message = await Message.findById(messageId).populate("chat", "members");
+
+  if (!message) return next(new ErrorHandler("Message not found", 404));
+
+  const isMember = message.chat.members.some(
+    (member) => member.toString() === req.user.toString()
+  );
+
+  if (!isMember)
+    return next(new ErrorHandler("You are not allowed to access this chat", 403));
+
+  message.deliveredTo.addToSet(req.user);
+  message.readBy.addToSet(req.user);
+  await message.save();
+
+  emitEvent(req, MESSAGE_READ, message.chat.members, {
+    chatId: message.chat._id,
+    messageId: message._id,
+    userId: req.user,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Message marked as read",
+  });
+});
+
 export {
   newGroupChat,
   getMyChats,
@@ -419,4 +450,5 @@ export {
   renameGroup,
   deleteChat,
   getMessages,
+  markMessageAsRead,
 };

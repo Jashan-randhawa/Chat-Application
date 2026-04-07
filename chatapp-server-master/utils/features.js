@@ -67,7 +67,22 @@ const uploadFilesToCloudinary = async (files = []) => {
 };
 
 const deletFilesFromCloudinary = async (public_ids) => {
-  // Delete files from cloudinary
+  if (!public_ids?.length) return;
+
+  const chunkSize = 100;
+  const chunks = [];
+
+  for (let i = 0; i < public_ids.length; i += chunkSize) {
+    chunks.push(public_ids.slice(i, i + chunkSize));
+  }
+
+  await Promise.all(
+    chunks.map((chunk) =>
+      cloudinary.api.delete_resources(chunk, {
+        resource_type: "image",
+      })
+    )
+  );
 };
 
 export {
