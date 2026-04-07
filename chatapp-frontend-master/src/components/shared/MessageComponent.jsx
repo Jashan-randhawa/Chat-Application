@@ -4,7 +4,6 @@ import moment from "moment";
 import { fileFormat } from "../../lib/features";
 import RenderAttachment from "./RenderAttachment";
 import { motion } from "framer-motion";
-import { Done as DoneIcon, DoneAll as DoneAllIcon } from "@mui/icons-material";
 
 const MessageComponent = ({ message, user }) => {
   const { sender, content, attachments = [], createdAt, deliveredTo = [], readBy = [] } = message;
@@ -127,15 +126,6 @@ const MessageComponent = ({ message, user }) => {
           }}>
             {time}
           </Typography>
-          {sameSender && (
-            isRead ? (
-              <DoneAllIcon sx={{ fontSize: 14, color: "#53bdeb" }} />
-            ) : isDelivered ? (
-              <DoneAllIcon sx={{ fontSize: 14, color: "#8696a0" }} />
-            ) : (
-              <DoneIcon sx={{ fontSize: 14, color: "#8696a0" }} />
-            )
-          )}
         </Box>
       </Box>
     </motion.div>
