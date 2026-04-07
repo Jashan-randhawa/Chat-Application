@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Critical for mobile: prevents zooming and ensures correct scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- PWA / mobile app feel -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#008069" />
+    <title>ChatApp</title>
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html {
+        /* Use dvh for mobile — accounts for browser chrome */
+        height: 100%;
+        height: -webkit-fill-available;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        height: -webkit-fill-available;
+        width: 100%;
+        /* Prevent overscroll bounce on iOS */
+        overscroll-behavior: none;
+        font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: #f0f2f5;
+      }
+
+      #root {
+        height: 100%;
+        height: -webkit-fill-available;
+        display: flex;
+        flex-direction: column;
+        /* Prevent the root from scrolling */
+        overflow: hidden;
+      }
+
+      /* Thin scrollbars on desktop */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #d1d7db transparent;
+      }
+
+      /* Prevent text selection on UI elements */
+      button, a {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* Smooth focus outlines */
+      :focus-visible {
+        outline: 2px solid #00a884;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
