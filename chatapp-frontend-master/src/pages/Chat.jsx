@@ -6,10 +6,9 @@ import {
   Send as SendIcon,
   EmojiEmotions as EmojiIcon,
   Mic as MicIcon,
-  MoreVert as MoreVertIcon,
-  Search as SearchIcon,
-  Phone as PhoneIcon,
-  Videocam as VideoIcon,
+  Stop as StopIcon,
+  Videocam as VideocamIcon,
+  CallEnd as CallEndIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { InputBox } from "../components/styles/StyledComponents";
@@ -17,9 +16,10 @@ import FileMenu from "../components/dialogs/FileMenu";
 import MessageComponent from "../components/shared/MessageComponent";
 import { getSocket } from "../socket";
 import {
-  ALERT, CHAT_JOINED, CHAT_LEAVED, NEW_MESSAGE, START_TYPING, STOP_TYPING,
+  ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_DELIVERED, MESSAGE_READ, NEW_MESSAGE, START_TYPING, STOP_TYPING,
+  CALL_OFFER, CALL_ANSWER, ICE_CANDIDATE, CALL_ENDED,
 } from "../constants/events";
-import { useChatDetailsQuery, useGetMessagesQuery } from "../redux/api/api";
+import { useChatDetailsQuery, useGetMessagesQuery, useMarkMessageReadMutation, useSendAttachmentsMutation } from "../redux/api/api";
 import { useErrors, useSocketEvents } from "../hooks/hook";
 import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
@@ -27,6 +27,7 @@ import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
 import { TypingLoader } from "../components/layout/Loaders";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const Chat = ({ chatId, user, onBack, isMobile }) => {
   const socket = getSocket();
@@ -43,8 +44,23 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const [IamTyping, setIamTyping] = useState(false);
   const [userTyping, setUserTyping] = useState(false);
   const typingTimeout = useRef(null);
+  const readReceiptQueueRef = useRef(new Set());
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioStreamRef = useRef(null);
+  const recordingIntervalRef = useRef(null);
+  const [markMessageRead] = useMarkMessageReadMutation();
+  const [sendAttachments] = useSendAttachmentsMutation();
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const peerConnectionRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(null);
 
-  const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
+  const chatDetails = useChatDetailsQuery({ chatId, populate: true, skip: !chatId });
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
 
   const { data: oldMessages, setData: setOldMessages } = useInfiniteScrollTop(
@@ -60,8 +76,13 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   ];
 
   const members = chatDetails?.data?.chat?.members;
-  const chatName = chatDetails?.data?.chat?.name;
   const isGroupChat = chatDetails?.data?.chat?.groupChat;
+  const receiver = members?.find(
+    (member) => member?._id?.toString() !== user?._id?.toString()
+  );
+  const chatName = isGroupChat
+    ? chatDetails?.data?.chat?.name
+    : receiver?.name || chatDetails?.data?.chat?.name;
 
   const messageOnChange = (e) => {
     setMessage(e.target.value);
@@ -88,6 +109,223 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
     setMessage("");
   };
 
+  const stopAudioStream = () => {
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+  };
+
+  const stopRecordingTimer = () => {
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+  };
+
+  const uploadVoiceNote = async (audioBlob) => {
+    const myForm = new FormData();
+    myForm.append("chatId", chatId);
+    myForm.append("files", audioBlob, `voice-note-${Date.now()}.webm`);
+
+    const toastId = toast.loading("Sending voice note...");
+    const res = await sendAttachments(myForm);
+    if (res?.data?.success) toast.success("Voice note sent", { id: toastId });
+    else toast.error("Failed to send voice note", { id: toastId });
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia)
+        return toast.error("Voice recording is not supported on this browser.");
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+
+      audioChunksRef.current = [];
+      audioStreamRef.current = stream;
+      mediaRecorderRef.current = mediaRecorder;
+      setRecordingSeconds(0);
+      setIsRecording(true);
+
+      recordingIntervalRef.current = setInterval(
+        () => setRecordingSeconds((prev) => prev + 1),
+        1000
+      );
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: "audio/webm",
+          });
+          if (audioBlob.size > 0) await uploadVoiceNote(audioBlob);
+        } catch (error) {
+          toast.error("Failed to process voice note.");
+        } finally {
+          audioChunksRef.current = [];
+          stopAudioStream();
+          stopRecordingTimer();
+          setIsRecording(false);
+          setRecordingSeconds(0);
+        }
+      };
+
+      mediaRecorder.start();
+    } catch (error) {
+      stopAudioStream();
+      stopRecordingTimer();
+      setIsRecording(false);
+      setRecordingSeconds(0);
+      toast.error("Microphone permission denied.");
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const ensureLocalStream = async () => {
+    if (localStreamRef.current) return localStreamRef.current;
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    localStreamRef.current = stream;
+
+    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+    return stream;
+  };
+
+  const createPeerConnection = (targetUserId) => {
+    const peer = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+    peerConnectionRef.current = peer;
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        peer.addTrack(track, localStreamRef.current);
+      });
+    }
+
+    peer.ontrack = (event) => {
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+
+    peer.onicecandidate = (event) => {
+      if (!event.candidate || !targetUserId) return;
+      socket.emit(ICE_CANDIDATE, {
+        chatId,
+        toUserId: targetUserId,
+        candidate: event.candidate,
+      });
+    };
+
+    return peer;
+  };
+
+  const closeCall = (notify = true) => {
+    if (notify && isCallActive) socket.emit(CALL_ENDED, { chatId });
+
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+    }
+
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+
+    setIsCallActive(false);
+    setIncomingCall(null);
+  };
+
+  const startVideoCall = async () => {
+    try {
+      const targetUser = members?.find(
+        (member) => member?._id?.toString() !== user?._id?.toString()
+      );
+      if (!targetUser?._id) return toast.error("No receiver found for this call.");
+
+      await ensureLocalStream();
+      const peer = createPeerConnection(targetUser._id);
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+
+      socket.emit(CALL_OFFER, {
+        chatId,
+        offer,
+      });
+      setIsCallActive(true);
+    } catch (error) {
+      toast.error("Unable to start video call.");
+      closeCall(false);
+    }
+  };
+
+  const acceptIncomingCall = async () => {
+    if (!incomingCall) return;
+    try {
+      await ensureLocalStream();
+      const peer = createPeerConnection(incomingCall.from._id);
+      await peer.setRemoteDescription(
+        new RTCSessionDescription(incomingCall.offer)
+      );
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+
+      socket.emit(CALL_ANSWER, {
+        chatId,
+        toUserId: incomingCall.from._id,
+        answer,
+      });
+
+      setIncomingCall(null);
+      setIsCallActive(true);
+    } catch (error) {
+      toast.error("Unable to accept call.");
+      closeCall(false);
+    }
+  };
+
+  const addUniqueUsers = (existingUsers = [], usersToAdd = []) => {
+    const uniqueIds = new Set(existingUsers.map((id) => id?.toString()));
+    usersToAdd.forEach((id) => uniqueIds.add(id?.toString()));
+    return Array.from(uniqueIds);
+  };
+
+  const updateMessageReceiptInState = (messageId, updater) => {
+    if (!messageId) return;
+    setMessages((prev) =>
+      prev.map((messageItem) =>
+        messageItem._id?.toString() === messageId.toString()
+          ? updater(messageItem)
+          : messageItem
+      )
+    );
+    setOldMessages((prev) =>
+      prev.map((messageItem) =>
+        messageItem._id?.toString() === messageId.toString()
+          ? updater(messageItem)
+          : messageItem
+      )
+    );
+  };
+
   useEffect(() => {
     socket.emit(CHAT_JOINED, { userId: user._id, members });
     dispatch(removeNewMessagesAlert(chatId));
@@ -111,6 +349,27 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const newMessagesListener = useCallback((data) => {
     if (data.chatId !== chatId) return;
     setMessages((prev) => [...prev, data.message]);
+
+    if (data.message?.sender?._id !== user?._id && data.message?._id) {
+      markMessageRead(data.message._id);
+    }
+  }, [chatId, markMessageRead, user?._id]);
+
+  const messageDeliveredListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    updateMessageReceiptInState(data.messageId, (messageItem) => ({
+      ...messageItem,
+      deliveredTo: addUniqueUsers(messageItem.deliveredTo, data.deliveredTo || []),
+    }));
+  }, [chatId]);
+
+  const messageReadListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    updateMessageReceiptInState(data.messageId, (messageItem) => ({
+      ...messageItem,
+      deliveredTo: addUniqueUsers(messageItem.deliveredTo, [data.userId]),
+      readBy: addUniqueUsers(messageItem.readBy, [data.userId]),
+    }));
   }, [chatId]);
 
   const startTypingListener = useCallback((data) => {
@@ -133,16 +392,80 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
     }]);
   }, [chatId]);
 
+  const callOfferListener = useCallback((data) => {
+    if (data.chatId !== chatId || data.from?._id === user?._id) return;
+    setIncomingCall({ offer: data.offer, from: data.from });
+    toast.success(`${data.from?.name || "Someone"} is calling...`);
+  }, [chatId, user?._id]);
+
+  const callAnswerListener = useCallback(async (data) => {
+    if (data.chatId !== chatId || !peerConnectionRef.current) return;
+    await peerConnectionRef.current.setRemoteDescription(
+      new RTCSessionDescription(data.answer)
+    );
+    setIsCallActive(true);
+  }, [chatId]);
+
+  const callIceCandidateListener = useCallback(async (data) => {
+    if (data.chatId !== chatId || !peerConnectionRef.current) return;
+    try {
+      await peerConnectionRef.current.addIceCandidate(
+        new RTCIceCandidate(data.candidate)
+      );
+    } catch (error) {
+      console.error("ICE candidate error:", error);
+    }
+  }, [chatId]);
+
+  const callEndedListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    closeCall(false);
+    toast("Call ended");
+  }, [chatId]);
+
   useSocketEvents(socket, {
     [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
+    [MESSAGE_DELIVERED]: messageDeliveredListener,
+    [MESSAGE_READ]: messageReadListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
+    [CALL_OFFER]: callOfferListener,
+    [CALL_ANSWER]: callAnswerListener,
+    [ICE_CANDIDATE]: callIceCandidateListener,
+    [CALL_ENDED]: callEndedListener,
   });
 
   useErrors(errors);
 
   const allMessages = [...oldMessages, ...messages];
+
+  useEffect(() => {
+    const unreadIncoming = allMessages.filter(
+      (msg) =>
+        msg?._id &&
+        msg?.sender?._id !== user?._id &&
+        !msg?.readBy?.some((reader) => reader?.toString() === user?._id?.toString())
+    );
+
+    unreadIncoming.forEach((msg) => {
+      const id = msg._id.toString();
+      if (readReceiptQueueRef.current.has(id)) return;
+      readReceiptQueueRef.current.add(id);
+      markMessageRead(id).finally(() => {
+        readReceiptQueueRef.current.delete(id);
+      });
+    });
+  }, [allMessages, markMessageRead, user?._id]);
+
+  useEffect(
+    () => () => {
+      stopRecordingTimer();
+      stopAudioStream();
+      closeCall(false);
+    },
+    []
+  );
 
   // Empty state (no chat selected — desktop only, mobile never shows this)
   if (!chatId) {
@@ -217,18 +540,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           </IconButton>
         )}
 
-        {/* Avatar */}
-        <Box sx={{
-          width: 38, height: 38, borderRadius: "50%",
-          bgcolor: "rgba(255,255,255,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "0.95rem", color: "white", fontWeight: 700, flexShrink: 0,
-        }}>
-          {chatName?.[0]?.toUpperCase() || "C"}
-        </Box>
-
-        {/* Name + status */}
-        <Box flex={1} minWidth={0}>
+        {/* Name only (1:1 chat header simplified) */}
+        <Box flex={1} minWidth={0} display="flex" alignItems="center">
           <Typography sx={{
             fontWeight: 600, fontSize: "0.9375rem",
             color: "white", lineHeight: 1.2,
@@ -237,26 +550,14 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           }}>
             {chatName || "Chat"}
           </Typography>
-          <Typography sx={{
-            fontSize: "0.72rem", color: "rgba(255,255,255,0.75)",
-            fontFamily: "'Segoe UI', system-ui, sans-serif",
-          }}>
-            {userTyping
-              ? <span style={{ color: "#d1fae5" }}>typing...</span>
-              : isGroupChat ? "Group chat" : "click here for info"
-            }
-          </Typography>
         </Box>
-
-        {/* Right action icons */}
-        <Box display="flex">
-          {[VideoIcon, PhoneIcon, SearchIcon, MoreVertIcon].map((Icon, i) => (
-            <IconButton key={i} size="small"
-              sx={{ color: "rgba(255,255,255,0.85)", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
-              <Icon sx={{ fontSize: 20 }} />
-            </IconButton>
-          ))}
-        </Box>
+        <IconButton
+          size="small"
+          onClick={startVideoCall}
+          sx={{ color: "white", flexShrink: 0 }}
+        >
+          <VideocamIcon />
+        </IconButton>
       </Box>
 
       {/* Messages area */}
@@ -338,12 +639,18 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
 
         {/* Send / Mic */}
         <Box
-          component={message.trim() ? "button" : "div"}
-          onClick={message.trim() ? submitHandler : undefined}
+          component={message.trim() || isRecording ? "button" : "div"}
+          onClick={
+            message.trim()
+              ? submitHandler
+              : isRecording
+                ? stopVoiceRecording
+                : startVoiceRecording
+          }
           sx={{
             width: 44, height: 44,
             borderRadius: "50%",
-            bgcolor: "#00a884",
+            bgcolor: isRecording ? "#f15c6d" : "#00a884",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
             border: "none",
@@ -356,12 +663,65 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
         >
           {message.trim()
             ? <SendIcon sx={{ fontSize: 20, color: "white", ml: "2px" }} />
-            : <MicIcon sx={{ fontSize: 20, color: "white" }} />
+            : isRecording
+              ? <StopIcon sx={{ fontSize: 20, color: "white" }} />
+              : <MicIcon sx={{ fontSize: 20, color: "white" }} />
           }
         </Box>
+        {isRecording && (
+          <Typography sx={{ fontSize: "0.75rem", color: "#f15c6d", minWidth: "3rem" }}>
+            {`0:${String(recordingSeconds).padStart(2, "0")}`}
+          </Typography>
+        )}
       </Box>
 
       <FileMenu anchorE1={fileMenuAnchor} chatId={chatId} />
+
+      {(incomingCall || isCallActive) && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            bgcolor: "rgba(0,0,0,0.85)",
+            zIndex: 1400,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 2,
+            p: 2,
+          }}
+        >
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            style={{ width: "100%", maxWidth: 560, borderRadius: 12, background: "#101010" }}
+          />
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ width: 180, borderRadius: 12, background: "#101010" }}
+          />
+
+          {incomingCall && !isCallActive && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Typography sx={{ color: "#fff" }}>
+                {incomingCall.from?.name || "User"} is calling...
+              </Typography>
+              <IconButton onClick={acceptIncomingCall} sx={{ color: "#1ed760" }}>
+                <VideocamIcon />
+              </IconButton>
+            </Box>
+          )}
+
+          <IconButton onClick={() => closeCall(true)} sx={{ color: "#ff4f5e" }}>
+            <CallEndIcon />
+          </IconButton>
+        </Box>
+      )}
     </Fragment>
   );
 };
