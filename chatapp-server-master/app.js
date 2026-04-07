@@ -5,12 +5,16 @@ import { errorMiddleware } from "./middlewares/error.js";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import { createServer } from "http";
-import { v4 as uuid } from "uuid";
 import cors from "cors";
 import { v2 as cloudinary } from "cloudinary";
 import {
+  CALL_ANSWER,
+  CALL_ENDED,
+  CALL_OFFER,
   CHAT_JOINED,
   CHAT_LEAVED,
+  ICE_CANDIDATE,
+  MESSAGE_DELIVERED,
   NEW_MESSAGE,
   NEW_MESSAGE_ALERT,
   ONLINE_USERS,
@@ -19,6 +23,7 @@ import {
 } from "./constants/events.js";
 import { getSockets } from "./lib/helper.js";
 import { Message } from "./models/message.js";
+import { Chat } from "./models/chat.js";
 import { corsOptions } from "./constants/config.js";
 import { socketAuthenticator } from "./middlewares/auth.js";
 
@@ -37,6 +42,8 @@ const envMode = process.env.NODE_ENV.trim() || "PRODUCTION";
 const adminSecretKey = process.env.ADMIN_SECRET_KEY || "adsasdsdfsdfsdfd";
 const userSocketIDs = new Map();
 const onlineUsers = new Set();
+const typingRateLimiter = new Map();
+const typingAutoStopTimeouts = new Map();
 
 connectDB(mongoURI);
 cloudinary.config({
@@ -78,46 +85,131 @@ io.on("connection", (socket) => {
   const user = socket.user;
   userSocketIDs.set(user._id.toString(), socket.id);
 
-  socket.on(NEW_MESSAGE, async ({ chatId, members, message }) => {
-    const messageForRealTime = {
-      content: message,
-      _id: uuid(),
-      sender: {
-        _id: user._id,
-        name: user.name,
-      },
-      chat: chatId,
-      createdAt: new Date().toISOString(),
-    };
-
-    const messageForDB = {
-      content: message,
-      sender: user._id,
-      chat: chatId,
-    };
-
-    const membersSocket = getSockets(members);
-    io.to(membersSocket).emit(NEW_MESSAGE, {
-      chatId,
-      message: messageForRealTime,
-    });
-    io.to(membersSocket).emit(NEW_MESSAGE_ALERT, { chatId });
-
+  socket.on(NEW_MESSAGE, async ({ chatId, message }) => {
     try {
-      await Message.create(messageForDB);
+      if (!chatId || !message?.trim()) return;
+
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const recipients = chat.members.filter(
+        (member) => member.toString() !== user._id.toString()
+      );
+      const onlineRecipients = recipients.filter((member) =>
+        userSocketIDs.has(member.toString())
+      );
+
+      const messageForDB = await Message.create({
+        content: message,
+        sender: user._id,
+        chat: chatId,
+        deliveredTo: onlineRecipients,
+      });
+
+      const messageForRealTime = {
+        content: message,
+        _id: messageForDB._id,
+        sender: {
+          _id: user._id,
+          name: user.name,
+        },
+        chat: chatId,
+        createdAt: messageForDB.createdAt,
+        deliveredTo: onlineRecipients,
+        readBy: [],
+      };
+
+      const membersSocket = getSockets(chat.members);
+      io.to(membersSocket).emit(NEW_MESSAGE, {
+        chatId,
+        message: messageForRealTime,
+      });
+      io.to(membersSocket).emit(NEW_MESSAGE_ALERT, { chatId });
+
+      const senderSocket = userSocketIDs.get(user._id.toString());
+      if (senderSocket && onlineRecipients.length) {
+        io.to(senderSocket).emit(MESSAGE_DELIVERED, {
+          chatId,
+          messageId: messageForDB._id,
+          deliveredTo: onlineRecipients,
+        });
+      }
     } catch (error) {
-      throw new Error(error);
+      console.error("NEW_MESSAGE socket error:", error);
     }
   });
 
-  socket.on(START_TYPING, ({ members, chatId }) => {
-    const membersSockets = getSockets(members);
-    socket.to(membersSockets).emit(START_TYPING, { chatId });
+  socket.on(START_TYPING, ({ chatId }) => {
+    const handleStartTyping = async () => {
+      if (!chatId) return;
+
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const socketLimiterKey = `${socket.id}:${chatId}`;
+      const lastEventAt = typingRateLimiter.get(socketLimiterKey) || 0;
+      const now = Date.now();
+
+      if (now - lastEventAt < 500) return;
+
+      typingRateLimiter.set(socketLimiterKey, now);
+
+      const membersSockets = getSockets(chat.members);
+      socket.to(membersSockets).emit(START_TYPING, { chatId });
+
+      const timeoutKey = `${user._id.toString()}:${chatId}`;
+      const existingTimeout = typingAutoStopTimeouts.get(timeoutKey);
+      if (existingTimeout) clearTimeout(existingTimeout);
+
+      const timeoutId = setTimeout(() => {
+        socket.to(membersSockets).emit(STOP_TYPING, { chatId });
+        typingAutoStopTimeouts.delete(timeoutKey);
+      }, 5000);
+
+      typingAutoStopTimeouts.set(timeoutKey, timeoutId);
+    };
+
+    handleStartTyping().catch((error) =>
+      console.error("START_TYPING socket error:", error)
+    );
   });
 
-  socket.on(STOP_TYPING, ({ members, chatId }) => {
-    const membersSockets = getSockets(members);
-    socket.to(membersSockets).emit(STOP_TYPING, { chatId });
+  socket.on(STOP_TYPING, ({ chatId }) => {
+    const handleStopTyping = async () => {
+      if (!chatId) return;
+
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const timeoutKey = `${user._id.toString()}:${chatId}`;
+      const existingTimeout = typingAutoStopTimeouts.get(timeoutKey);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+        typingAutoStopTimeouts.delete(timeoutKey);
+      }
+
+      const membersSockets = getSockets(chat.members);
+      socket.to(membersSockets).emit(STOP_TYPING, { chatId });
+    };
+
+    handleStopTyping().catch((error) =>
+      console.error("STOP_TYPING socket error:", error)
+    );
   });
 
   socket.on(CHAT_JOINED, ({ userId, members }) => {
@@ -134,9 +226,123 @@ io.on("connection", (socket) => {
     io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
   });
 
+  socket.on(CALL_OFFER, async ({ chatId, offer, toUserId }) => {
+    try {
+      if (!chatId || !offer || !toUserId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const isTargetMember = chat.members.some(
+        (member) => member.toString() === toUserId.toString()
+      );
+      if (!isTargetMember) return;
+
+      const recipientSocket = userSocketIDs.get(toUserId.toString());
+      if (!recipientSocket) return;
+
+      socket.to(recipientSocket).emit(CALL_OFFER, {
+        chatId,
+        offer,
+        from: { _id: user._id, name: user.name },
+      });
+    } catch (error) {
+      console.error("CALL_OFFER socket error:", error);
+    }
+  });
+
+  socket.on(CALL_ANSWER, async ({ chatId, answer, toUserId }) => {
+    try {
+      if (!chatId || !answer || !toUserId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const targetSocketId = userSocketIDs.get(toUserId.toString());
+      if (!targetSocketId) return;
+
+      socket.to(targetSocketId).emit(CALL_ANSWER, {
+        chatId,
+        answer,
+        fromUserId: user._id,
+      });
+    } catch (error) {
+      console.error("CALL_ANSWER socket error:", error);
+    }
+  });
+
+  socket.on(ICE_CANDIDATE, async ({ chatId, candidate, toUserId }) => {
+    try {
+      if (!chatId || !candidate || !toUserId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const targetSocketId = userSocketIDs.get(toUserId.toString());
+      if (!targetSocketId) return;
+
+      socket.to(targetSocketId).emit(ICE_CANDIDATE, {
+        chatId,
+        candidate,
+        fromUserId: user._id,
+      });
+    } catch (error) {
+      console.error("ICE_CANDIDATE socket error:", error);
+    }
+  });
+
+  socket.on(CALL_ENDED, async ({ chatId, toUserId }) => {
+    try {
+      if (!chatId || !toUserId) return;
+      const chat = await Chat.findById(chatId).select("members");
+      if (!chat) return;
+
+      const isMember = chat.members.some(
+        (member) => member.toString() === user._id.toString()
+      );
+      if (!isMember) return;
+
+      const isTargetMember = chat.members.some(
+        (member) => member.toString() === toUserId.toString()
+      );
+      if (!isTargetMember) return;
+
+      const recipientSocket = userSocketIDs.get(toUserId.toString());
+      if (!recipientSocket) return;
+
+      socket.to(recipientSocket).emit(CALL_ENDED, {
+        chatId,
+        fromUserId: user._id,
+      });
+    } catch (error) {
+      console.error("CALL_ENDED socket error:", error);
+    }
+  });
+
   socket.on("disconnect", () => {
     userSocketIDs.delete(user._id.toString());
     onlineUsers.delete(user._id.toString());
+    for (const key of typingRateLimiter.keys()) {
+      if (key.startsWith(`${socket.id}:`)) typingRateLimiter.delete(key);
+    }
+    for (const key of typingAutoStopTimeouts.keys()) {
+      if (key.startsWith(`${user._id.toString()}:`)) {
+        clearTimeout(typingAutoStopTimeouts.get(key));
+        typingAutoStopTimeouts.delete(key);
+      }
+    }
     socket.broadcast.emit(ONLINE_USERS, Array.from(onlineUsers));
   });
 });
