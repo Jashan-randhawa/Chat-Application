@@ -53,6 +53,9 @@ const sendAttachmentsValidator = () => [
 ];
 
 const chatIdValidator = () => [param("id", "Please Enter Chat ID").notEmpty()];
+const messageIdValidator = () => [
+  param("id", "Please Enter Message ID").notEmpty(),
+];
 
 const renameValidator = () => [
   param("id", "Please Enter Chat ID").notEmpty(),
@@ -82,6 +85,7 @@ export {
   adminLoginValidator,
   chatIdValidator,
   loginValidator,
+  messageIdValidator,
   newGroupValidator,
   registerValidator,
   removeMemberValidator,
