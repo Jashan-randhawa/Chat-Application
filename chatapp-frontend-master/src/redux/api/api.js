@@ -81,6 +81,14 @@ const api = createApi({
       }),
     }),
 
+    markMessageRead: builder.mutation({
+      query: (messageId) => ({
+        url: `chat/message/${messageId}/read`,
+        method: "PUT",
+        credentials: "include",
+      }),
+    }),
+
     myGroups: builder.query({
       query: () => ({
         url: "chat/my/groups",
@@ -172,6 +180,7 @@ export const {
   useChatDetailsQuery,
   useGetMessagesQuery,
   useSendAttachmentsMutation,
+  useMarkMessageReadMutation,
   useMyGroupsQuery,
   useAvailableFriendsQuery,
   useNewGroupMutation,
