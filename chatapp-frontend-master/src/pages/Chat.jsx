@@ -17,9 +17,9 @@ import FileMenu from "../components/dialogs/FileMenu";
 import MessageComponent from "../components/shared/MessageComponent";
 import { getSocket } from "../socket";
 import {
-  ALERT, CHAT_JOINED, CHAT_LEAVED, NEW_MESSAGE, START_TYPING, STOP_TYPING,
+  ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_DELIVERED, MESSAGE_READ, NEW_MESSAGE, START_TYPING, STOP_TYPING,
 } from "../constants/events";
-import { useChatDetailsQuery, useGetMessagesQuery } from "../redux/api/api";
+import { useChatDetailsQuery, useGetMessagesQuery, useMarkMessageReadMutation } from "../redux/api/api";
 import { useErrors, useSocketEvents } from "../hooks/hook";
 import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
@@ -43,6 +43,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const [IamTyping, setIamTyping] = useState(false);
   const [userTyping, setUserTyping] = useState(false);
   const typingTimeout = useRef(null);
+  const readReceiptQueueRef = useRef(new Set());
+  const [markMessageRead] = useMarkMessageReadMutation();
 
   const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
@@ -88,6 +90,30 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
     setMessage("");
   };
 
+  const addUniqueUsers = (existingUsers = [], usersToAdd = []) => {
+    const uniqueIds = new Set(existingUsers.map((id) => id?.toString()));
+    usersToAdd.forEach((id) => uniqueIds.add(id?.toString()));
+    return Array.from(uniqueIds);
+  };
+
+  const updateMessageReceiptInState = (messageId, updater) => {
+    if (!messageId) return;
+    setMessages((prev) =>
+      prev.map((messageItem) =>
+        messageItem._id?.toString() === messageId.toString()
+          ? updater(messageItem)
+          : messageItem
+      )
+    );
+    setOldMessages((prev) =>
+      prev.map((messageItem) =>
+        messageItem._id?.toString() === messageId.toString()
+          ? updater(messageItem)
+          : messageItem
+      )
+    );
+  };
+
   useEffect(() => {
     socket.emit(CHAT_JOINED, { userId: user._id, members });
     dispatch(removeNewMessagesAlert(chatId));
@@ -111,6 +137,27 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   const newMessagesListener = useCallback((data) => {
     if (data.chatId !== chatId) return;
     setMessages((prev) => [...prev, data.message]);
+
+    if (data.message?.sender?._id !== user?._id && data.message?._id) {
+      markMessageRead(data.message._id);
+    }
+  }, [chatId, markMessageRead, user?._id]);
+
+  const messageDeliveredListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    updateMessageReceiptInState(data.messageId, (messageItem) => ({
+      ...messageItem,
+      deliveredTo: addUniqueUsers(messageItem.deliveredTo, data.deliveredTo || []),
+    }));
+  }, [chatId]);
+
+  const messageReadListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+    updateMessageReceiptInState(data.messageId, (messageItem) => ({
+      ...messageItem,
+      deliveredTo: addUniqueUsers(messageItem.deliveredTo, [data.userId]),
+      readBy: addUniqueUsers(messageItem.readBy, [data.userId]),
+    }));
   }, [chatId]);
 
   const startTypingListener = useCallback((data) => {
@@ -136,6 +183,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   useSocketEvents(socket, {
     [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
+    [MESSAGE_DELIVERED]: messageDeliveredListener,
+    [MESSAGE_READ]: messageReadListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
   });
@@ -143,6 +192,24 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
   useErrors(errors);
 
   const allMessages = [...oldMessages, ...messages];
+
+  useEffect(() => {
+    const unreadIncoming = allMessages.filter(
+      (msg) =>
+        msg?._id &&
+        msg?.sender?._id !== user?._id &&
+        !msg?.readBy?.some((reader) => reader?.toString() === user?._id?.toString())
+    );
+
+    unreadIncoming.forEach((msg) => {
+      const id = msg._id.toString();
+      if (readReceiptQueueRef.current.has(id)) return;
+      readReceiptQueueRef.current.add(id);
+      markMessageRead(id).finally(() => {
+        readReceiptQueueRef.current.delete(id);
+      });
+    });
+  }, [allMessages, markMessageRead, user?._id]);
 
   // Empty state (no chat selected — desktop only, mobile never shows this)
   if (!chatId) {
