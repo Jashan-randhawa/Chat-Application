@@ -39,27 +39,21 @@ const newGroupChat = TryCatch(async (req, res, next) => {
 });
 
 const getMyChats = TryCatch(async (req, res, next) => {
-  const chats = await Chat.find({ members: req.user }).populate(
+  const chats = await Chat.find({ members: req.user, groupChat: false }).populate(
     "members",
     "name avatar"
   );
 
-  const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
+  const transformedChats = chats.map(({ _id, members, groupChat }) => {
     const safeMembers = Array.isArray(members) ? members : [];
     const otherMember = getOtherMember(safeMembers, req.user);
-    const fallbackName = otherMember?.name || name || "Unknown Chat";
-    const fallbackAvatar = otherMember?.avatar?.url || "";
+    if (!otherMember) return null;
 
     return {
       _id,
       groupChat,
-      avatar: groupChat
-        ? safeMembers
-            .slice(0, 3)
-            .map(({ avatar }) => avatar?.url)
-            .filter(Boolean)
-        : [fallbackAvatar].filter(Boolean),
-      name: groupChat ? name || "Unnamed Group" : fallbackName,
+      avatar: [otherMember?.avatar?.url].filter(Boolean),
+      name: otherMember.name,
       members: safeMembers.reduce((prev, curr) => {
         if (curr._id.toString() !== req.user.toString()) {
           prev.push(curr._id);
@@ -67,7 +61,7 @@ const getMyChats = TryCatch(async (req, res, next) => {
         return prev;
       }, []),
     };
-  });
+  }).filter(Boolean);
 
   return res.status(200).json({
     success: true,
