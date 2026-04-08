@@ -1,19 +1,25 @@
 {
-  "name": "ChatApp",
-  "short_name": "ChatApp",
-  "description": "Real-time chat application with voice calls",
+  "name": "Vibe Chat",
+  "short_name": "Vibe",
+  "description": "Vibe Chat - real-time messaging and voice calls",
   "start_url": "/",
   "display": "standalone",
+  "scope": "/",
   "orientation": "portrait",
-  "background_color": "#008069",
-  "theme_color": "#008069",
+  "background_color": "#0f0f1a",
+  "theme_color": "#7c6eff",
   "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/vite.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ],
-  "permissions": ["microphone"]
+  ]
 }

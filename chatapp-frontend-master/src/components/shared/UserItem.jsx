@@ -15,6 +15,8 @@ const UserItem = ({
   handlerIsLoading,
   isAdded = false,
   styling = {},
+  nameColor = "#111b21",
+  hoverBg = "#f5f6f6",
 }) => {
   const { name, _id, avatar } = user;
 
@@ -28,7 +30,7 @@ const UserItem = ({
         py: 0.85,
         borderRadius: "12px",
         transition: "background 0.15s ease",
-        "&:hover": { bgcolor: "rgba(255,255,255,0.04)" },
+        "&:hover": { bgcolor: hoverBg },
         ...styling,
       }}
     >
@@ -36,6 +38,7 @@ const UserItem = ({
       <Box sx={{ position: "relative", flexShrink: 0 }}>
         <Avatar
           src={transformImage(avatar)}
+          imgProps={{ loading: "lazy", decoding: "async" }}
           sx={{
             width: 40,
             height: 40,
@@ -48,7 +51,7 @@ const UserItem = ({
       <Typography
         sx={{
           flex: 1,
-          color: "rgba(226,232,240,0.9)",
+          color: nameColor,
           fontSize: "0.88rem",
           fontWeight: 500,
           overflow: "hidden",
@@ -64,9 +67,10 @@ const UserItem = ({
         size="small"
         onClick={() => handler(_id)}
         disabled={handlerIsLoading}
+        aria-label={`${isAdded ? "Remove" : "Add"} ${name}`}
         sx={{
-          width: 30,
-          height: 30,
+          width: 44,
+          height: 44,
           borderRadius: "8px",
           flexShrink: 0,
           bgcolor: isAdded

@@ -1,7 +1,7 @@
 import { useInputValidation } from "6pp";
 import { Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material";
 import {
-  Dialog, DialogTitle, List, Stack, TextField,
+  Dialog, List,
   IconButton, Box, Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { useAsyncMutation } from "../../hooks/hook";
 import { useLazySearchUserQuery, useSendFriendRequestMutation } from "../../redux/api/api";
 import { setIsSearch } from "../../redux/reducers/misc";
 import UserItem from "../shared/UserItem";
+import useDebouncedValue from "../../hooks/useDebouncedValue";
 
 const Search = () => {
   const { isSearch } = useSelector((state) => state.misc);
@@ -19,6 +20,7 @@ const Search = () => {
   const [sendFriendRequest, isLoadingSendFriendRequest] = useAsyncMutation(useSendFriendRequestMutation);
 
   const search = useInputValidation("");
+  const debouncedSearch = useDebouncedValue(search.value, 300);
   const [users, setUsers] = useState([]);
 
   const addFriendHandler = async (id) => {
@@ -28,13 +30,10 @@ const Search = () => {
   const searchCloseHandler = () => dispatch(setIsSearch(false));
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      searchUser(search.value)
-        .then(({ data }) => setUsers(data?.users || []))
-        .catch(console.error);
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [search.value]);
+    searchUser(debouncedSearch)
+      .then(({ data }) => setUsers(data?.users || []))
+      .catch(console.error);
+  }, [debouncedSearch, searchUser]);
 
   return (
     <Dialog
@@ -43,8 +42,6 @@ const Search = () => {
       PaperProps={{
         sx: {
           borderRadius: { xs: "16px 16px 0 0", sm: "12px" },
-          width: "100%",
-          width: "100%",
           maxWidth: { xs: "100%", sm: 420 },
           overflow: "hidden",
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
@@ -67,7 +64,13 @@ const Search = () => {
             New Chat
           </Typography>
           <IconButton onClick={searchCloseHandler} size="small"
-            sx={{ color: "rgba(255,255,255,0.8)", "&:hover": { color: "white" } }}
+            aria-label="Close search dialog"
+            sx={{
+              color: "rgba(255,255,255,0.8)",
+              width: 44,
+              height: 44,
+              "&:hover": { color: "white" },
+            }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>
@@ -82,6 +85,11 @@ const Search = () => {
             placeholder="Search name or number"
             value={search.value}
             onChange={search.changeHandler}
+            autoFocus
+            aria-label="Search contacts"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") searchCloseHandler();
+            }}
             style={{
               border: "none", outline: "none", background: "transparent",
               color: "white", fontSize: "16px", width: "100%",

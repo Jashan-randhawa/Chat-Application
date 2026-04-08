@@ -87,7 +87,11 @@ const Header = () => {
 
             {/* Mobile menu button */}
             <Box sx={{ display: { xs: "block", sm: "none" } }}>
-              <IconButton sx={{ color: "rgba(255,255,255,0.9)" }} onClick={handleMobile}>
+              <IconButton
+                aria-label="Open chat list menu"
+                sx={{ color: "rgba(255,255,255,0.9)", width: 44, height: 44 }}
+                onClick={handleMobile}
+              >
                 <MenuIcon />
               </IconButton>
             </Box>
@@ -125,9 +129,12 @@ const WAIconBtn = ({ title, icon, onClick, value }) => (
     <IconButton
       size="medium"
       onClick={onClick}
+      aria-label={title}
       sx={{
         color: "rgba(255,255,255,0.85)",
         borderRadius: "50%",
+        width: 44,
+        height: 44,
         transition: "all 0.15s ease",
         "&:hover": { color: "white", bgcolor: "rgba(255,255,255,0.1)" },
       }}
