@@ -2,22 +2,18 @@ import React, { Fragment, useCallback, useEffect, useRef, useState } from "react
 import { useMicrophonePermission } from "../hooks/useMicrophonePermission";
 import MicPermissionDialog from "../components/shared/MicPermissionDialog";
 import AppLayout from "../components/layout/AppLayout";
-import { IconButton, Skeleton, Stack, Box, Typography, Avatar, Tooltip } from "@mui/material";
+import { IconButton, Skeleton, Box, Typography, Avatar, Tooltip } from "@mui/material";
 import {
-  AttachFile as AttachFileIcon,
-  Send as SendIcon,
-  EmojiEmotions as EmojiIcon,
-  Mic as MicIcon,
-  Stop as StopIcon,
   CallEnd as CallEndIcon,
   ArrowBack as ArrowBackIcon,
   MicOff as MicOffIcon,
+  Mic as MicIcon,
   PhoneCallback as PhoneCallbackIcon,
   Phone as PhoneIcon,
 } from "@mui/icons-material";
-import { InputBox } from "../components/styles/StyledComponents";
 import FileMenu from "../components/dialogs/FileMenu";
-import MessageComponent from "../components/shared/MessageComponent";
+import ResponsiveChatContainer from "../components/shared/ResponsiveChatContainer";
+import ResponsiveMessageInput from "../components/shared/ResponsiveMessageInput";
 import { getSocket } from "../socket";
 import {
   ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_DELIVERED, MESSAGE_READ,
@@ -35,7 +31,6 @@ import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
 import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
-import { TypingLoader } from "../components/layout/Loaders";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -864,97 +859,26 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
       </Box>
 
       {/* Messages */}
-      <Stack
-        ref={containerRef}
-        padding={"0.75rem 5%"}
-        spacing={"0.25rem"}
-        sx={{
-          flex: 1, overflowX: "hidden", overflowY: "auto",
-          minHeight: 0,
-          background: "#efeae2",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23cfc4b0' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          display: "flex", flexDirection: "column",
-          "&::-webkit-scrollbar": { width: 5 },
-          "&::-webkit-scrollbar-track": { background: "transparent" },
-          "&::-webkit-scrollbar-thumb": { background: "rgba(0,0,0,0.15)", borderRadius: 3 },
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
-        {allMessages.map(i => <MessageComponent key={i._id} message={i} user={user} />)}
-        {userTyping && <TypingLoader />}
-        <div ref={bottomRef} />
-      </Stack>
+      <ResponsiveChatContainer
+        messages={allMessages}
+        user={user}
+        containerRef={containerRef}
+        bottomRef={bottomRef}
+        userTyping={userTyping}
+      />
 
       {/* Input bar */}
-      <Box
-        component="form"
+      <ResponsiveMessageInput
+        message={message}
+        onMessageChange={messageOnChange}
         onSubmit={submitHandler}
-        sx={{
-          bgcolor: "#f0f2f5", px: 1, py: 0.75,
-          display: "flex", alignItems: "center", gap: 0.75,
-          flexShrink: 0,
-          position: "sticky",
-          bottom: 0,
-          zIndex: 10,
-          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
-          paddingLeft: "max(0.25rem, env(safe-area-inset-left))",
-          paddingRight: "max(0.25rem, env(safe-area-inset-right))",
-        }}
-      >
-        <Box sx={{
-          display: "flex", bgcolor: "#ffffff", borderRadius: "24px",
-          flex: 1, alignItems: "center", px: 1, minHeight: "2.75rem",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-        }}>
-          <IconButton size="small" aria-label="Open emoji picker" sx={{ color: "#54656f", flexShrink: 0, width: 44, height: 44 }}>
-            <EmojiIcon sx={{ fontSize: 22 }} />
-          </IconButton>
-          <IconButton onClick={handleFileOpen} size="small" aria-label="Attach file" sx={{ color: "#54656f", flexShrink: 0, width: 44, height: 44 }}>
-            <AttachFileIcon sx={{ fontSize: 20, transform: "rotate(45deg)" }} />
-          </IconButton>
-          <InputBox
-            placeholder="Type a message"
-            value={message}
-            onChange={messageOnChange}
-            aria-label="Type a message"
-            style={{
-              flex: 1, border: "none", outline: "none",
-              background: "transparent", padding: "0.5rem 0.25rem",
-              fontSize: "0.9375rem", color: "#111b21",
-              fontFamily: "'Segoe UI', system-ui, sans-serif", minWidth: 0,
-            }}
-          />
-        </Box>
-
-        <Box
-          component={message.trim() || isRecording ? "button" : "div"}
-          onClick={message.trim() ? submitHandler : isRecording ? stopVoiceRecording : startVoiceRecording}
-          type={message.trim() || isRecording ? "button" : undefined}
-          aria-label={message.trim() ? "Send message" : isRecording ? "Stop voice recording" : "Start voice recording"}
-          sx={{
-            width: 44, height: 44, borderRadius: "50%",
-            bgcolor: isRecording ? "#f15c6d" : "#00a884",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", border: "none", flexShrink: 0,
-            transition: "background 0.15s ease",
-            "&:hover": { bgcolor: "#008069" },
-            "&:active": { transform: "scale(0.94)" },
-            touchAction: "manipulation",
-          }}
-        >
-          {message.trim()
-            ? <SendIcon sx={{ fontSize: 20, color: "white", ml: "2px" }} />
-            : isRecording
-              ? <StopIcon sx={{ fontSize: 20, color: "white" }} />
-              : <MicIcon sx={{ fontSize: 20, color: "white" }} />}
-        </Box>
-
-        {isRecording && (
-          <Typography sx={{ fontSize: "0.75rem", color: "#f15c6d", minWidth: "3rem" }}>
-            {`0:${String(recordingSeconds).padStart(2, "0")}`}
-          </Typography>
-        )}
-      </Box>
+        onFileOpen={handleFileOpen}
+        isRecording={isRecording}
+        onStartRecording={startVoiceRecording}
+        onStopRecording={stopVoiceRecording}
+        recordingSeconds={recordingSeconds}
+        userTyping={userTyping}
+      />
 
       </Box>
 
