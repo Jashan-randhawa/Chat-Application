@@ -1,0 +1,19 @@
+{
+  "name": "ChatApp",
+  "short_name": "ChatApp",
+  "description": "Real-time chat application with voice calls",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#008069",
+  "theme_color": "#008069",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "permissions": ["microphone"]
+}
