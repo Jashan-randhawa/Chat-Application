@@ -42,7 +42,6 @@ const Search = () => {
       PaperProps={{
         sx: {
           borderRadius: { xs: "16px 16px 0 0", sm: "12px" },
-          width: "100%",
           maxWidth: { xs: "100%", sm: 420 },
           overflow: "hidden",
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
