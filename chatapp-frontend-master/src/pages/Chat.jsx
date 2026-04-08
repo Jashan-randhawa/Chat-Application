@@ -126,7 +126,7 @@ const VoiceCallOverlay = ({
           <>
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
               <Tooltip title="Decline">
-                <IconButton onClick={onEnd} sx={{
+                <IconButton onClick={onEnd} aria-label="Decline call" sx={{
                   bgcolor: "#f44336", color: "#fff",
                   width: { xs: 64, sm: 72 }, height: { xs: 64, sm: 72 },
                   "&:hover": { bgcolor: "#d32f2f" },
@@ -140,7 +140,7 @@ const VoiceCallOverlay = ({
 
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
               <Tooltip title="Accept">
-                <IconButton onClick={onAccept} sx={{
+                <IconButton onClick={onAccept} aria-label="Accept call" sx={{
                   bgcolor: "#4caf50", color: "#fff",
                   width: { xs: 64, sm: 72 }, height: { xs: 64, sm: 72 },
                   "&:hover": { bgcolor: "#388e3c" },
@@ -156,7 +156,7 @@ const VoiceCallOverlay = ({
           <>
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
               <Tooltip title={isMuted ? "Unmute" : "Mute"}>
-                <IconButton onClick={onToggleMute} sx={{
+                <IconButton onClick={onToggleMute} aria-label={isMuted ? "Unmute microphone" : "Mute microphone"} sx={{
                   bgcolor: isMuted ? "#f44336" : "rgba(255,255,255,0.12)",
                   color: "#fff", width: { xs: 54, sm: 60 }, height: { xs: 54, sm: 60 },
                   backdropFilter: "blur(8px)",
@@ -172,7 +172,7 @@ const VoiceCallOverlay = ({
 
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
               <Tooltip title="End call">
-                <IconButton onClick={onEnd} sx={{
+                <IconButton onClick={onEnd} aria-label="End call" sx={{
                   bgcolor: "#f44336", color: "#fff",
                   width: { xs: 64, sm: 72 }, height: { xs: 64, sm: 72 },
                   "&:hover": { bgcolor: "#d32f2f" },
@@ -828,7 +828,12 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
         paddingTop: isMobile ? "max(0.75rem, calc(env(safe-area-inset-top) + 0.25rem))" : undefined,
       }}>
         {isMobile && (
-          <IconButton onClick={onBack || (() => navigate("/"))} size="small" sx={{ color: "white", mr: 0.5, flexShrink: 0 }}>
+          <IconButton
+            onClick={onBack || (() => navigate("/"))}
+            size="small"
+            aria-label="Back to chats"
+            sx={{ color: "white", mr: 0.5, flexShrink: 0, width: 44, height: 44 }}
+          >
             <ArrowBackIcon />
           </IconButton>
         )}
@@ -846,7 +851,12 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
         {/* Voice call button — shown only for 1-on-1 chats */}
         {!isGroupChat && (
           <Tooltip title="Start voice call">
-            <IconButton size="small" onClick={startVoiceCall} sx={{ color: "white", flexShrink: 0 }}>
+            <IconButton
+              size="small"
+              onClick={startVoiceCall}
+              aria-label="Start voice call"
+              sx={{ color: "white", flexShrink: 0, width: 44, height: 44 }}
+            >
               <PhoneIcon />
             </IconButton>
           </Tooltip>
@@ -896,16 +906,17 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
           flex: 1, alignItems: "center", px: 1, minHeight: "2.75rem",
           boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
         }}>
-          <IconButton size="small" sx={{ color: "#54656f", flexShrink: 0 }}>
+          <IconButton size="small" aria-label="Open emoji picker" sx={{ color: "#54656f", flexShrink: 0, width: 44, height: 44 }}>
             <EmojiIcon sx={{ fontSize: 22 }} />
           </IconButton>
-          <IconButton onClick={handleFileOpen} size="small" sx={{ color: "#54656f", flexShrink: 0 }}>
+          <IconButton onClick={handleFileOpen} size="small" aria-label="Attach file" sx={{ color: "#54656f", flexShrink: 0, width: 44, height: 44 }}>
             <AttachFileIcon sx={{ fontSize: 20, transform: "rotate(45deg)" }} />
           </IconButton>
           <InputBox
             placeholder="Type a message"
             value={message}
             onChange={messageOnChange}
+            aria-label="Type a message"
             style={{
               flex: 1, border: "none", outline: "none",
               background: "transparent", padding: "0.5rem 0.25rem",
@@ -918,6 +929,8 @@ const Chat = ({ chatId, user, onBack, isMobile }) => {
         <Box
           component={message.trim() || isRecording ? "button" : "div"}
           onClick={message.trim() ? submitHandler : isRecording ? stopVoiceRecording : startVoiceRecording}
+          type={message.trim() || isRecording ? "button" : undefined}
+          aria-label={message.trim() ? "Send message" : isRecording ? "Stop voice recording" : "Start voice recording"}
           sx={{
             width: 44, height: 44, borderRadius: "50%",
             bgcolor: isRecording ? "#f15c6d" : "#00a884",

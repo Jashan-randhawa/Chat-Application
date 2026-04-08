@@ -1,5 +1,5 @@
 import {
-  Avatar, Button, Dialog, DialogTitle, ListItem, Skeleton,
+  Avatar, Dialog, Skeleton,
   Stack, Box, Typography, IconButton,
 } from "@mui/material";
 import {
@@ -36,7 +36,6 @@ const Notifications = () => {
         sx: {
           borderRadius: { xs: "16px 16px 0 0", sm: "12px" },
           width: "100%",
-          width: "100%",
           maxWidth: { xs: "100%", sm: 420 },
           overflow: "hidden",
           boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
@@ -57,8 +56,17 @@ const Notifications = () => {
         }}>
           Notifications
         </Typography>
-        <IconButton onClick={closeHandler} size="small"
-          sx={{ color: "rgba(255,255,255,0.8)", "&:hover": { color: "white" } }}>
+        <IconButton
+          onClick={closeHandler}
+          size="small"
+          aria-label="Close notifications"
+          sx={{
+            color: "rgba(255,255,255,0.8)",
+            width: 44,
+            height: 44,
+            "&:hover": { color: "white" },
+          }}
+        >
           <CloseIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -113,6 +121,7 @@ const NotificationItem = memo(({ sender, _id, handler }) => {
     }}>
       <Avatar
         src={transformImage(avatar?.[0])}
+        imgProps={{ loading: "lazy", decoding: "async" }}
         sx={{
           width: 46, height: 46, flexShrink: 0,
           border: "2px solid #e9edef",
@@ -130,9 +139,10 @@ const NotificationItem = memo(({ sender, _id, handler }) => {
         <IconButton
           onClick={() => handler({ _id, accept: true })}
           size="small"
+          aria-label={`Accept friend request from ${name}`}
           sx={{
             bgcolor: "#e7f8f4", color: "#00a884",
-            width: 32, height: 32,
+            width: 44, height: 44,
             "&:hover": { bgcolor: "#00a884", color: "white" },
             transition: "all 0.15s ease",
           }}
@@ -142,9 +152,10 @@ const NotificationItem = memo(({ sender, _id, handler }) => {
         <IconButton
           onClick={() => handler({ _id, accept: false })}
           size="small"
+          aria-label={`Decline friend request from ${name}`}
           sx={{
             bgcolor: "#fef0f0", color: "#ef4444",
-            width: 32, height: 32,
+            width: 44, height: 44,
             "&:hover": { bgcolor: "#ef4444", color: "white" },
             transition: "all 0.15s ease",
           }}

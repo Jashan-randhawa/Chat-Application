@@ -37,6 +37,7 @@ const Profile = ({ user }) => {
         <Box sx={{ position: "relative", mt: 1 }}>
           <Avatar
             src={transformImage(user?.avatar?.url)}
+            imgProps={{ loading: "lazy", decoding: "async" }}
             sx={{
               width: 100, height: 100,
               border: "3px solid rgba(255,255,255,0.3)",

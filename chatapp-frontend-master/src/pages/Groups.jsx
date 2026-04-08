@@ -96,13 +96,15 @@ const Groups = () => {
           {/* Mobile: groups drawer toggle inside the header */}
           <Box sx={{ display: { xs: "flex", sm: "none" }, mr: 0.5 }}>
             <IconButton size="small" onClick={() => setIsMobileMenuOpen(p => !p)}
-              sx={{ color: "white" }}>
+              aria-label="Toggle groups menu"
+              sx={{ color: "white", width: 44, height: 44 }}>
               <MenuIcon />
             </IconButton>
           </Box>
           <Tooltip title="Back to chats">
             <IconButton onClick={navigateBack}
-              sx={{ color: "rgba(255,255,255,0.85)", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
+              aria-label="Back to chats"
+              sx={{ color: "rgba(255,255,255,0.85)", width: 44, height: 44, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
               <KeyboardBackspaceIcon />
             </IconButton>
           </Tooltip>
@@ -143,6 +145,7 @@ const Groups = () => {
                     }}
                   />
                   <IconButton onClick={updateGroupName} disabled={isLoadingGroupName}
+                    aria-label="Save group name"
                     sx={{ bgcolor: "#00a884", color: "white", borderRadius: "8px", "&:hover": { bgcolor: "#008069" } }}>
                     <DoneIcon />
                   </IconButton>
@@ -156,7 +159,8 @@ const Groups = () => {
                     {groupName}
                   </Typography>
                   <IconButton onClick={() => setIsEdit(true)} disabled={isLoadingGroupName} size="small"
-                    sx={{ color: "#8696a0", "&:hover": { color: "#00a884", bgcolor: "#e7f8f4" } }}>
+                    aria-label="Edit group name"
+                    sx={{ color: "#8696a0", width: 44, height: 44, "&:hover": { color: "#00a884", bgcolor: "#e7f8f4" } }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </>

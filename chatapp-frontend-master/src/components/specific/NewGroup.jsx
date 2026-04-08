@@ -103,7 +103,13 @@ const NewGroup = () => {
           <IconButton
             onClick={closeHandler}
             size="small"
-            sx={{ color: "rgba(148,163,184,0.6)", "&:hover": { color: "#f1f5f9", bgcolor: "rgba(255,255,255,0.06)" } }}
+            aria-label="Close new group dialog"
+            sx={{
+              color: "rgba(148,163,184,0.6)",
+              width: 44,
+              height: 44,
+              "&:hover": { color: "#f1f5f9", bgcolor: "rgba(255,255,255,0.06)" },
+            }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>
@@ -157,6 +163,8 @@ const NewGroup = () => {
                   key={i._id}
                   handler={selectMemberHandler}
                   isAdded={selectedMembers.includes(i._id)}
+                  nameColor="rgba(226,232,240,0.9)"
+                  hoverBg="rgba(255,255,255,0.04)"
                 />
               ))
             )}

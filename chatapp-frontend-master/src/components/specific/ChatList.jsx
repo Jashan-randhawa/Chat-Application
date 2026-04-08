@@ -1,20 +1,22 @@
-import { Box, Stack, Typography, InputAdornment } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import React, { useState } from "react";
 import ChatItem from "../shared/ChatItem";
+import useDebouncedValue from "../../hooks/useDebouncedValue";
 
 const ChatList = ({
   w = "100%", chats = [], chatId, onlineUsers = [],
   newMessagesAlert = [{ chatId: "", count: 0 }], handleDeleteChat,
 }) => {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 250);
 
   const filtered = chats?.filter(
     (c) =>
       c?.groupChat === false &&
       Array.isArray(c?.members) &&
       c.members.length > 0 &&
-      (!search || c.name?.toLowerCase().includes(search.toLowerCase()))
+      (!debouncedSearch || c.name?.toLowerCase().includes(debouncedSearch.toLowerCase()))
   );
 
   return (
@@ -32,6 +34,7 @@ const ChatList = ({
             placeholder="Search or start new chat"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            aria-label="Search chats"
             style={{
               border: "none", outline: "none", background: "transparent",
               fontSize: "16px", color: "#111b21", width: "100%",

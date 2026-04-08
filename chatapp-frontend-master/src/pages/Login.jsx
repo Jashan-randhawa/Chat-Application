@@ -159,8 +159,9 @@ const Login = () => {
                         <IconButton component="label" sx={{
                           position: "absolute", bottom: -4, right: -4,
                           bgcolor: "#00a884", color: "white", width: 28, height: 28,
+                          minWidth: 44, minHeight: 44,
                           "&:hover": { bgcolor: "#008069" },
-                        }}>
+                        }} aria-label="Upload avatar">
                           <CameraAltIcon sx={{ fontSize: 14 }} />
                           <VisuallyHiddenInput type="file" onChange={avatar.changeHandler} />
                         </IconButton>

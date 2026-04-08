@@ -56,16 +56,16 @@ const GlobalIncomingCallBanner = ({ call, onAccept, onDecline }) => {
         </Typography>
       </Box>
       <Tooltip title="Decline">
-        <IconButton onClick={onDecline} size="small" sx={{
-          bgcolor: "#f44336", color: "#fff", width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 },
+        <IconButton onClick={onDecline} size="small" aria-label="Decline incoming call" sx={{
+          bgcolor: "#f44336", color: "#fff", width: 44, height: 44,
           "&:hover": { bgcolor: "#d32f2f" },
         }}>
           <CallEndIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
         </IconButton>
       </Tooltip>
       <Tooltip title="Accept">
-        <IconButton onClick={onAccept} size="small" sx={{
-          bgcolor: "#4caf50", color: "#fff", width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 },
+        <IconButton onClick={onAccept} size="small" aria-label="Accept incoming call" sx={{
+          bgcolor: "#4caf50", color: "#fff", width: 44, height: 44,
           "&:hover": { bgcolor: "#388e3c" },
         }}>
           <PhoneCallbackIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
@@ -219,12 +219,14 @@ const AppLayout = () => (WrappedComponent) => {
                   </Box>
                   <Box sx={{ display: "flex" }}>
                     <IconButton size="small" onClick={() => dispatch(setIsSearch(true))}
-                      sx={{ color: "rgba(255,255,255,0.85)" }}>
+                      aria-label="Open search"
+                      sx={{ color: "rgba(255,255,255,0.85)", width: 44, height: 44 }}>
                       <SearchIcon />
                     </IconButton>
                     <IconButton size="small"
                       onClick={() => { dispatch(setIsNotification(true)); dispatch(resetNotificationCount()); }}
-                      sx={{ color: "rgba(255,255,255,0.85)", position: "relative" }}>
+                      aria-label="Open notifications"
+                      sx={{ color: "rgba(255,255,255,0.85)", position: "relative", width: 44, height: 44 }}>
                       <NotificationsIcon />
                       {notificationCount > 0 && (
                         <Box sx={{
@@ -240,7 +242,8 @@ const AppLayout = () => (WrappedComponent) => {
                       )}
                     </IconButton>
                     <IconButton size="small" onClick={() => dispatch(setIsNewGroup(true))}
-                      sx={{ color: "rgba(255,255,255,0.85)" }}>
+                      aria-label="Create new group"
+                      sx={{ color: "rgba(255,255,255,0.85)", width: 44, height: 44 }}>
                       <AddIcon />
                     </IconButton>
                   </Box>
