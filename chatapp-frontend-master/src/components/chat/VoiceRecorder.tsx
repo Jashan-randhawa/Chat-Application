@@ -9,35 +9,26 @@ function formatTime(seconds: number) {
 }
 
 interface VoiceRecorderProps {
-  onSend: (duration: number, waveform: number[]) => void;
+  onSend: (audio: Blob, duration: number, waveform: number[]) => Promise<void> | void;
   onText: (text: string) => void;
+  disabled?: boolean;
+  compact?: boolean;
 }
 
-export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onSend, onText, disabled = false, compact = false }: VoiceRecorderProps) {
   const [text, setText] = useState("");
   const [state, setState] = useState<"idle" | "recording" | "locked">("idle");
   const [elapsed, setElapsed] = useState(0);
   const [liveWave, setLiveWave] = useState<number[]>([]);
   const [isMicDown, setIsMicDown] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const samplesRef = useRef<number[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const elapsedRef = useRef(0);
-
-  const startTimer = () => {
-    elapsedRef.current = 0;
-    samplesRef.current = [];
-    setElapsed(0);
-    setLiveWave([]);
-
-    timerRef.current = setInterval(() => {
-      elapsedRef.current += 1;
-      setElapsed(elapsedRef.current);
-      const sample = Math.random() * 0.85 + 0.1;
-      samplesRef.current.push(sample);
-      setLiveWave([...samplesRef.current].slice(-20));
-    }, 1000);
-  };
+  const samplesRef = useRef<number[]>([]);
 
   const stopTimer = () => {
     if (timerRef.current) {
@@ -46,32 +37,93 @@ export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
     }
   };
 
-  const sendVoice = () => {
+  const resetRecorderState = () => {
     stopTimer();
-    const duration = Math.max(1, elapsedRef.current);
-    const waveform =
-      samplesRef.current.length > 3
-        ? samplesRef.current.map((v) => Math.max(0.1, Math.min(1, v)))
-        : Array.from({ length: 40 }, () => Math.random() * 0.8 + 0.1);
-
-    onSend(duration, waveform);
     setState("idle");
     setElapsed(0);
     setLiveWave([]);
     setIsMicDown(false);
+    elapsedRef.current = 0;
+    samplesRef.current = [];
   };
 
-  const cancel = () => {
+  const startRecording = async () => {
+    if (disabled || sending) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+      elapsedRef.current = 0;
+      samplesRef.current = [];
+      setElapsed(0);
+      setLiveWave([]);
+      setState("recording");
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+
+      recorder.start(100);
+
+      timerRef.current = setInterval(() => {
+        elapsedRef.current += 1;
+        setElapsed(elapsedRef.current);
+        const sample = Math.random() * 0.85 + 0.1;
+        samplesRef.current.push(sample);
+        setLiveWave([...samplesRef.current].slice(-20));
+      }, 1000);
+    } catch {
+      resetRecorderState();
+    }
+  };
+
+  const stopRecording = async (cancel = false) => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+
     stopTimer();
-    setState("idle");
-    setElapsed(0);
-    setLiveWave([]);
-    setIsMicDown(false);
+
+    await new Promise<void>((resolve) => {
+      recorder.onstop = async () => {
+        streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+
+        if (!cancel && chunksRef.current.length > 0) {
+          const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+          const duration = Math.max(1, elapsedRef.current);
+          const waveform =
+            samplesRef.current.length > 3
+              ? samplesRef.current.map((v) => Math.max(0.1, Math.min(1, v)))
+              : Array.from({ length: 40 }, () => Math.random() * 0.8 + 0.1);
+
+          setSending(true);
+          try {
+            await onSend(blob, duration, waveform);
+          } finally {
+            setSending(false);
+          }
+        }
+
+        resolve();
+      };
+      recorder.stop();
+    });
+
+    resetRecorderState();
   };
 
   useEffect(() => {
     const onUp = () => {
-      if (isMicDown && state === "recording") sendVoice();
+      if (isMicDown && state === "recording") {
+        void stopRecording(false);
+      }
     };
 
     window.addEventListener("mouseup", onUp);
@@ -83,13 +135,26 @@ export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
     };
   }, [isMicDown, state]);
 
-  useEffect(() => () => stopTimer(), []);
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      resetRecorderState();
+    };
+  }, []);
 
   if (state !== "idle") {
+    const wrapperClass = compact ? "" : "border-t border-border bg-card px-3 py-2";
     return (
-      <div className="border-t border-border bg-card px-3 py-2">
+      <div className={wrapperClass}>
         <div className="flex items-center gap-2">
-          <button onClick={cancel} className="rounded-full p-2 text-muted-foreground hover:bg-accent">
+          <button
+            onClick={() => void stopRecording(true)}
+            disabled={sending}
+            className="rounded-full p-2 text-muted-foreground hover:bg-accent disabled:opacity-40"
+          >
             ✕
           </button>
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
@@ -110,16 +175,21 @@ export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
               Lock
             </button>
           )}
-          <button onClick={sendVoice} className="rounded-full bg-primary p-3 text-primary-foreground">
-            ➤
+          <button
+            onClick={() => void stopRecording(false)}
+            disabled={sending}
+            className="rounded-full bg-primary p-3 text-primary-foreground disabled:opacity-40"
+          >
+            {sending ? "…" : "➤"}
           </button>
         </div>
       </div>
     );
   }
 
+  const wrapperClass = compact ? "" : "border-t border-border bg-card px-3 py-2";
   return (
-    <div className="border-t border-border bg-card px-3 py-2">
+    <div className={wrapperClass}>
       <div className="flex items-center gap-2">
         <input
           value={text}
@@ -131,8 +201,9 @@ export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
               setText("");
             }
           }}
+          disabled={disabled || sending}
           placeholder="Type a message..."
-          className="flex-1 rounded-full bg-muted px-4 py-2 text-sm outline-none"
+          className="flex-1 rounded-full bg-muted px-4 py-2 text-sm outline-none disabled:opacity-50"
         />
         {text.trim() ? (
           <button
@@ -140,7 +211,8 @@ export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
               onText(text.trim());
               setText("");
             }}
-            className="rounded-full bg-primary p-3 text-primary-foreground"
+            disabled={disabled || sending}
+            className="rounded-full bg-primary p-3 text-primary-foreground disabled:opacity-40"
           >
             ➤
           </button>
@@ -148,15 +220,14 @@ export default function VoiceRecorder({ onSend, onText }: VoiceRecorderProps) {
           <button
             onMouseDown={() => {
               setIsMicDown(true);
-              setState("recording");
-              startTimer();
+              void startRecording();
             }}
             onTouchStart={() => {
               setIsMicDown(true);
-              setState("recording");
-              startTimer();
+              void startRecording();
             }}
-            className="rounded-full bg-primary p-3 text-primary-foreground"
+            disabled={disabled || sending}
+            className="rounded-full bg-primary p-3 text-primary-foreground disabled:opacity-40"
           >
             🎤
           </button>
