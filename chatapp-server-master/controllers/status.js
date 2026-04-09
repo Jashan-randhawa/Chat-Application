@@ -7,6 +7,10 @@ import { ErrorHandler } from "../utils/utility.js";
 import { STATUS_UPDATED } from "../constants/events.js";
 import { emitEvent } from "../utils/features.js";
 
+const STATUS_LIFETIME_MS = 24 * 60 * 60 * 1000;
+const isSlideWithin24Hours = (slideDate) =>
+  Date.now() - new Date(slideDate).getTime() < STATUS_LIFETIME_MS;
+
 // POST /api/v1/status  — add a new slide to today's status (or create one)
 const addStatus = TryCatch(async (req, res, next) => {
   const { type, content, background } = req.body;
@@ -42,15 +46,20 @@ const addStatus = TryCatch(async (req, res, next) => {
   });
 
   if (statusDoc) {
+    // Keep only slides posted within the last 24 hours.
+    statusDoc.slides = statusDoc.slides.filter((s) => isSlideWithin24Hours(s.createdAt));
     statusDoc.slides.push(slide);
-    // Extend expiry to 24h from latest slide
-    statusDoc.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Expire the status doc 24h after the most recent remaining slide.
+    const latestSlideTime = Math.max(
+      ...statusDoc.slides.map((s) => new Date(s.createdAt).getTime())
+    );
+    statusDoc.expiresAt = new Date(latestSlideTime + STATUS_LIFETIME_MS);
     await statusDoc.save();
   } else {
     statusDoc = await Status.create({
       user: req.user,
       slides: [slide],
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + STATUS_LIFETIME_MS),
     });
   }
 
@@ -101,8 +110,32 @@ const getFriendsStatuses = TryCatch(async (req, res) => {
     .populate("user", "name avatar")
     .sort({ updatedAt: -1 });
 
+  // Ensure each individual slide follows 24-hour visibility.
+  const cleanedStatuses = [];
+  for (const status of statuses) {
+    const activeSlides = status.slides.filter((slide) =>
+      isSlideWithin24Hours(slide.createdAt)
+    );
+
+    if (!activeSlides.length) {
+      await Status.deleteOne({ _id: status._id });
+      continue;
+    }
+
+    if (activeSlides.length !== status.slides.length) {
+      const latestSlideTime = Math.max(
+        ...activeSlides.map((slide) => new Date(slide.createdAt).getTime())
+      );
+      status.slides = activeSlides;
+      status.expiresAt = new Date(latestSlideTime + STATUS_LIFETIME_MS);
+      await status.save();
+    }
+
+    cleanedStatuses.push(status);
+  }
+
   // Format response — mark which slides current user has seen
-  const formatted = statuses.map((s) => ({
+  const formatted = cleanedStatuses.map((s) => ({
     _id: s._id,
     user: {
       _id: s.user._id,
