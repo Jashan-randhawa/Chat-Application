@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+    --background: 0 0% 97%;
+    --foreground: 200 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 20% 10%;
+
+    --primary: 168 80% 32%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 168 30% 94%;
+    --secondary-foreground: 168 80% 25%;
+
+    --muted: 200 12% 93%;
+    --muted-foreground: 200 10% 50%;
+
+    --accent: 168 50% 90%;
+    --accent-foreground: 168 80% 25%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 15% 90%;
+    --input: 200 15% 90%;
+    --ring: 168 80% 32%;
+
+    --radius: 0.75rem;
+
+    --chat-bg: 40 20% 95%;
+    --bubble-sent: 168 55% 92%;
+    --bubble-sent-foreground: 200 20% 10%;
+    --bubble-received: 0 0% 100%;
+    --bubble-received-foreground: 200 20% 10%;
+    --online: 152 70% 48%;
+    --sidebar-width: 380px;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 200 20% 10%;
+    --sidebar-primary: 168 80% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 168 50% 94%;
+    --sidebar-accent-foreground: 168 80% 25%;
+    --sidebar-border: 200 15% 92%;
+    --sidebar-ring: 168 80% 32%;
+  }
+
+  .dark {
+    --background: 210 20% 7%;
+    --foreground: 200 15% 90%;
+
+    --card: 210 18% 11%;
+    --card-foreground: 200 15% 90%;
+
+    --popover: 210 18% 11%;
+    --popover-foreground: 200 15% 90%;
+
+    --primary: 168 70% 45%;
+    --primary-foreground: 210 20% 7%;
+
+    --secondary: 210 15% 16%;
+    --secondary-foreground: 168 70% 45%;
+
+    --muted: 210 15% 16%;
+    --muted-foreground: 200 10% 55%;
+
+    --accent: 210 15% 18%;
+    --accent-foreground: 168 70% 45%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 15% 18%;
+    --input: 210 15% 18%;
+    --ring: 168 70% 45%;
+
+    --chat-bg: 210 18% 9%;
+    --bubble-sent: 168 50% 18%;
+    --bubble-sent-foreground: 200 15% 90%;
+    --bubble-received: 210 15% 16%;
+    --bubble-received-foreground: 200 15% 90%;
+    --online: 152 70% 48%;
+
+    --sidebar-background: 210 18% 11%;
+    --sidebar-foreground: 200 15% 90%;
+    --sidebar-primary: 168 70% 45%;
+    --sidebar-primary-foreground: 210 20% 7%;
+    --sidebar-accent: 210 15% 18%;
+    --sidebar-accent-foreground: 168 70% 45%;
+    --sidebar-border: 210 15% 18%;
+    --sidebar-ring: 168 70% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.35);
+  }
+}
+
+@layer utilities {
+  .chat-pattern {
+    background-color: hsl(var(--chat-bg));
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+}
