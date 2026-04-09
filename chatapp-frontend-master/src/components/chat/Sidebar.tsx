@@ -4,7 +4,7 @@ import { useSocket } from "@/context/SocketContext";
 import { EVENTS } from "@/config/constants";
 import {
   getMyChats, searchUsers, sendFriendRequest, getNotifications,
-  acceptFriendRequest, newGroupChat, getMyFriends, getFriendsStatuses
+  acceptFriendRequest, newGroupChat, getMyFriends, getFriendsStatuses, getMessages
 } from "@/services/api";
 import ChatListItem from "./ChatListItem";
 import ChatAvatar from "./Avatar";
@@ -16,6 +16,7 @@ import {
   Loader2, MessageCircle, UsersRound, UserCheck, Settings, CircleDot, Phone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatTime, fileFormat } from "@/lib/features";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,11 @@ interface Props {
   onRefreshChats: () => void;
 }
 
+interface ChatPreview {
+  text: string;
+  time: string;
+}
+
 export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshChats }: Props) {
   const {
     user, logout, notificationCount, resetNotificationCount,
@@ -39,6 +45,7 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
   const [activePanel, setActivePanel] = useState<PanelType>("chats");
   const [searchQuery, setSearchQuery] = useState("");
   const [unseenStatusCount, setUnseenStatusCount] = useState(0);
+  const [chatPreviews, setChatPreviews] = useState<Record<string, ChatPreview>>({});
 
   const socket = useSocket();
 
@@ -174,6 +181,55 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
   const filteredChats = chats.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const createPreviewText = (msg: any) => {
+      if (msg?.content?.trim()) return msg.content.trim();
+      const firstAttachment = msg?.attachments?.[0]?.url || "";
+      if (!firstAttachment) return "No messages yet";
+      const type = fileFormat(firstAttachment);
+      if (type === "image") return "📷 Photo";
+      if (type === "video") return "🎥 Video";
+      if (type === "audio") return "🎵 Audio";
+      const ext = firstAttachment.split(".").pop()?.toLowerCase();
+      if (ext === "webm" || ext === "ogg") return "🎤 Voice message";
+      return "📎 Attachment";
+    };
+
+    const loadPreviews = async () => {
+      const entries = await Promise.all(
+        chats.map(async (chat) => {
+          try {
+            const { data } = await getMessages(chat._id, 1);
+            const messages = data?.messages || [];
+            const latest = messages[messages.length - 1];
+            if (!latest) return [chat._id, { text: "No messages yet", time: "" }] as const;
+            return [
+              chat._id,
+              {
+                text: createPreviewText(latest),
+                time: formatTime(latest.createdAt || ""),
+              },
+            ] as const;
+          } catch {
+            return [chat._id, { text: "No messages yet", time: "" }] as const;
+          }
+        })
+      );
+
+      if (cancelled) return;
+      setChatPreviews(Object.fromEntries(entries));
+    };
+
+    if (chats.length) loadPreviews();
+    else setChatPreviews({});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chats]);
 
   // Search users
   const handleUserSearch = (query: string) => {
@@ -398,7 +454,8 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
                       selectedChat={selectedChat}
                       onSelect={onSelectChat}
                       newMessageAlert={newMessagesAlert.find((a) => a.chatId === chat._id)}
-
+                      lastMessageText={chatPreviews[chat._id]?.text}
+                      lastMessageTime={chatPreviews[chat._id]?.time}
                     />
                   ))
                 )}
@@ -581,7 +638,8 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
                         selectedChat={selectedChat}
                         onSelect={(id) => { onSelectChat(id); setActivePanel("chats"); }}
                         newMessageAlert={newMessagesAlert.find((a) => a.chatId === chat._id)}
-
+                        lastMessageText={chatPreviews[chat._id]?.text}
+                        lastMessageTime={chatPreviews[chat._id]?.time}
                       />
                     ))
                 )}
