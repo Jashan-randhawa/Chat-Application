@@ -22,6 +22,7 @@ export const fileFormat = (url = ""): string => {
 
 export const formatDate = (date: string): string => {
   const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
   const now = new Date();
   const diff = now.getTime() - d.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -33,5 +34,7 @@ export const formatDate = (date: string): string => {
 };
 
 export const formatTime = (date: string): string => {
-  return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
