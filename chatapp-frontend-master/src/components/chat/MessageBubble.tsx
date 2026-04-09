@@ -104,7 +104,7 @@ function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-end gap-[2px] h-7">
           {VOICE_WAVEFORM_BAR_HEIGHTS.map((h, i) => {
-            const barProgress = (i / VOICE_WAVEFORM_BAR_HEIGHTS.length) * 100;
+            const barProgress = (i / (VOICE_WAVEFORM_BAR_HEIGHTS.length - 1)) * 100;
             return (
               <div
                 key={i}
