@@ -189,6 +189,11 @@ export default function MessageBubble({ message, isSelf, showName }: Props) {
   }
 
   const hasAttachments = message.attachments && message.attachments.length > 0;
+  const onlyVoiceNoteAttachment =
+    !message.content &&
+    !!message.attachments &&
+    message.attachments.length === 1 &&
+    isVoiceNote(message.attachments[0].url);
 
   return (
     <motion.div
@@ -228,12 +233,14 @@ export default function MessageBubble({ message, isSelf, showName }: Props) {
           <p className="text-sm leading-relaxed break-words">{message.content}</p>
         )}
 
-        <span className={cn(
-          "text-[10px] float-right mt-1 ml-3",
-          isSelf ? "text-primary/60" : "text-muted-foreground"
-        )}>
-          {formatTime(message.createdAt)}
-        </span>
+        {!onlyVoiceNoteAttachment && (
+          <span className={cn(
+            "text-[10px] float-right mt-1 ml-3",
+            isSelf ? "text-primary/60" : "text-muted-foreground"
+          )}>
+            {formatTime(message.createdAt)}
+          </span>
+        )}
       </div>
     </motion.div>
   );

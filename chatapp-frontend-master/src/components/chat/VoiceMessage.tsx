@@ -134,9 +134,9 @@ export default function VoiceMessage({ msg, audioUrl }: VoiceMessageProps) {
 
   return (
     <div
-      className="min-w-[220px] max-w-[300px] rounded-xl px-3 pb-1.5 pt-2 shadow"
+      className="min-w-[220px] max-w-[300px] px-3 pb-1.5 pt-2 shadow-sm"
       style={{
-        backgroundColor: isOwn ? "#005C4B" : "#202C33",
+        backgroundColor: isOwn ? "hsl(var(--chat-bubble-sent))" : "hsl(var(--chat-bubble-received))",
         borderRadius: isOwn ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
       }}
     >
@@ -145,8 +145,8 @@ export default function VoiceMessage({ msg, audioUrl }: VoiceMessageProps) {
       <div className="flex items-center gap-2.5">
         <button
           onClick={togglePlay}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none text-white"
-          style={{ background: "rgba(255,255,255,0.15)" }}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-none text-white transition-opacity hover:opacity-90"
+          style={{ background: "rgba(255,255,255,0.2)" }}
         >
           {playing ? (
             <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -163,11 +163,11 @@ export default function VoiceMessage({ msg, audioUrl }: VoiceMessageProps) {
         <Waveform waveform={waveform} progress={progress} isOwn={isOwn} onSeek={handleSeek} />
       </div>
 
-      <div className="mt-1 flex justify-between">
-        <span className="text-[11.5px]" style={{ color: "rgba(233,237,239,0.55)" }}>
+      <div className="mt-1 flex justify-between px-0.5">
+        <span className="text-[11px]" style={{ color: "rgba(233,237,239,0.6)" }}>
           {formatDuration(playing || elapsed > 0 ? elapsed : duration)}
         </span>
-        <span className="text-[11px]" style={{ color: "rgba(233,237,239,0.55)" }}>
+        <span className="text-[11px]" style={{ color: "rgba(233,237,239,0.6)" }}>
           {msg.time}
         </span>
       </div>
