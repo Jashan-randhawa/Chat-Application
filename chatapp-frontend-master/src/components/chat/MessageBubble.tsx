@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { formatTime, fileFormat } from "@/lib/features";
 import type { Message } from "@/store/appStore";
 import { motion } from "framer-motion";
-import { Download, FileText, Music, Video, ZoomIn, Mic, Play, Pause } from "lucide-react";
+import { Download, FileText, Music, Video, ZoomIn, Play, Pause } from "lucide-react";
 
 interface Props {
   message: Message;
@@ -67,19 +67,13 @@ function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // Static waveform bars (decorative, like WhatsApp)
-  const bars = Array.from({ length: 28 }, (_, i) => {
-    const heights = [0.3, 0.5, 0.8, 0.6, 1.0, 0.7, 0.4, 0.9, 0.5, 0.6, 0.8, 0.3, 0.7, 0.5,
-                     0.9, 0.4, 0.6, 1.0, 0.5, 0.7, 0.3, 0.8, 0.6, 0.4, 0.9, 0.5, 0.7, 0.4];
-    return heights[i % heights.length];
-  });
-
-  const filled = isSelf ? "bg-primary-foreground" : "bg-primary";
-  const unfilled = isSelf ? "bg-primary-foreground/30" : "bg-muted-foreground/30";
+  const bars = [0.32, 0.45, 0.72, 0.58, 0.88, 0.66, 0.4, 0.84, 0.5, 0.62, 0.78, 0.35, 0.7, 0.52, 0.9, 0.42, 0.65, 1, 0.55, 0.74, 0.38, 0.8, 0.63, 0.47, 0.86, 0.54, 0.76, 0.44, 0.69, 0.51, 0.82, 0.46];
+  const activeBar = isSelf ? "bg-primary-foreground" : "bg-primary";
+  const idleBar = isSelf ? "bg-primary-foreground/35" : "bg-muted-foreground/35";
 
   return (
     <div className={cn(
-      "flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-w-[200px] max-w-[260px]",
+      "flex items-center gap-2.5 rounded-2xl px-2.5 py-2 min-w-[220px] max-w-[300px]",
       isSelf ? "bg-black/10" : "bg-black/5"
     )}>
       <audio
@@ -91,42 +85,36 @@ function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
         preload="metadata"
       />
 
-      {/* Play/Pause button */}
       <button
         onClick={togglePlay}
         className={cn(
-          "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-          isSelf ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-primary/15 hover:bg-primary/25"
+          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
+          isSelf ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90" : "bg-primary text-primary-foreground hover:bg-primary/90"
         )}
       >
-        {playing
-          ? <Pause className={cn("w-4 h-4", isSelf ? "text-primary-foreground" : "text-primary")} />
-          : <Play className={cn("w-4 h-4 ml-0.5", isSelf ? "text-primary-foreground" : "text-primary")} />
-        }
+        {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
       </button>
 
-      {/* Waveform + progress */}
-      <div className="flex-1 flex flex-col gap-1 min-w-0">
-        <div className="flex items-end gap-[2px] h-8">
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <div className="flex items-end gap-[2px] h-7">
           {bars.map((h, i) => {
-            const barProgress = (i / bars.length) * 100;
+            const barProgress = ((i + 1) / bars.length) * 100;
             return (
               <div
                 key={i}
                 className={cn(
                   "flex-1 rounded-full transition-colors",
-                  barProgress <= progress ? filled : unfilled
+                  barProgress <= progress ? activeBar : idleBar
                 )}
-                style={{ height: `${Math.max(20, h * 100)}%` }}
+                style={{ height: `${Math.max(22, h * 100)}%` }}
               />
             );
           })}
         </div>
-        <div className="flex justify-between items-center">
-          <span className={cn("text-[10px] font-mono", isSelf ? "text-primary-foreground/60" : "text-muted-foreground")}>
+        <div className="flex items-center justify-end">
+          <span className={cn("text-[11px] font-medium tabular-nums", isSelf ? "text-primary-foreground/80" : "text-muted-foreground")}>
             {playing || currentTime > 0 ? fmt(currentTime) : fmt(duration)}
           </span>
-          <Mic className={cn("w-3 h-3", isSelf ? "text-primary-foreground/40" : "text-muted-foreground/50")} />
         </div>
       </div>
     </div>
