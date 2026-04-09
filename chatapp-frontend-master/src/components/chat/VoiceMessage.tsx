@@ -136,7 +136,7 @@ export default function VoiceMessage({ msg, audioUrl }: VoiceMessageProps) {
     <div
       className="min-w-[220px] max-w-[300px] px-3 pb-1.5 pt-2 shadow-sm"
       style={{
-        backgroundColor: isOwn ? "hsl(var(--chat-bubble-sent))" : "hsl(var(--chat-bubble-received))",
+        backgroundColor: isOwn ? "#005C4B" : "#202C33",
         borderRadius: isOwn ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
       }}
     >

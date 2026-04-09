@@ -156,13 +156,10 @@ function FileAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
 }
 
 function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
-  const type = fileFormat(url);
-  if (type === "image") return <ImageAttachment url={url} isSelf={isSelf} />;
-  if (type === "video") return <VideoAttachment url={url} />;
-  if (type === "audio") return <AudioAttachment url={url} isSelf={isSelf} time={time} />;
-  // webm/ogg uploaded as voice notes won't match "audio" via extension check — detect manually
   const fname = getFileName(url).toLowerCase();
-  if (fname.endsWith(".webm") || fname.endsWith(".ogg")) {
+  // IMPORTANT: check voice notes before generic file type checks
+  // so `.webm` notes don't get rendered as <video>.
+  if (isVoiceNote(url) || fname.endsWith(".webm") || fname.endsWith(".ogg")) {
     return (
       <VoiceMessage
         audioUrl={url}
@@ -174,6 +171,11 @@ function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time:
       />
     );
   }
+
+  const type = fileFormat(url);
+  if (type === "image") return <ImageAttachment url={url} isSelf={isSelf} />;
+  if (type === "video") return <VideoAttachment url={url} />;
+  if (type === "audio") return <AudioAttachment url={url} isSelf={isSelf} time={time} />;
   return <FileAttachment url={url} isSelf={isSelf} />;
 }
 
