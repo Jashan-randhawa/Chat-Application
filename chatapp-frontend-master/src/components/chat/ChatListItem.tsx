@@ -11,9 +11,18 @@ interface Props {
   newMessageAlert?: { chatId: string; count: number };
   isOnline?: boolean;
   lastMessageTime?: string;
+  lastMessageText?: string;
 }
 
-export default function ChatListItem({ chat, selectedChat, onSelect, newMessageAlert, isOnline, lastMessageTime }: Props) {
+export default function ChatListItem({
+  chat,
+  selectedChat,
+  onSelect,
+  newMessageAlert,
+  isOnline,
+  lastMessageTime,
+  lastMessageText,
+}: Props) {
   const isActive = selectedChat === chat._id;
 
   return (
@@ -53,7 +62,7 @@ export default function ChatListItem({ chat, selectedChat, onSelect, newMessageA
           <p className="text-xs text-muted-foreground truncate pr-2">
             {newMessageAlert && newMessageAlert.count > 0
               ? `${newMessageAlert.count} new message${newMessageAlert.count > 1 ? "s" : ""}`
-              : "Tap to open chat"}
+              : lastMessageText || "No messages yet"}
           </p>
           {newMessageAlert && newMessageAlert.count > 0 && (
             <span className="flex-shrink-0 min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center px-1.5">

@@ -22,6 +22,19 @@ interface CallParty { _id: string; name: string; }
 
 const PAGE_SIZE = 20;
 
+function getMessageTimestamp(message: Message): number {
+  const ts = new Date(message.createdAt).getTime();
+  return Number.isNaN(ts) ? 0 : ts;
+}
+
+function sortMessagesChronologically(messages: Message[]): Message[] {
+  return [...messages].sort((a, b) => {
+    const timeDiff = getMessageTimestamp(a) - getMessageTimestamp(b);
+    if (timeDiff !== 0) return timeDiff;
+    return a._id.localeCompare(b._id);
+  });
+}
+
 export default function ChatArea({ chatId, chats, onBack }: Props) {
   const socket = useSocket();
   const { user, onlineUsers, removeNewMessagesAlert } = useAppStore();
@@ -113,7 +126,7 @@ export default function ChatArea({ chatId, chats, onBack }: Props) {
 
     getMessages(chatId, 1)
       .then(({ data }) => {
-        setMessages((data.messages || []).reverse());
+        setMessages(sortMessagesChronologically(data.messages || []));
         setTotalPages(data.totalPages || 1);
       })
       .catch(() => {})
@@ -146,7 +159,7 @@ export default function ChatArea({ chatId, chats, onBack }: Props) {
 
     const onNewMessage = ({ chatId: cId, message }: { chatId: string; message: Message }) => {
       if (cId !== chatId) return;
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => sortMessagesChronologically([...prev, message]));
     };
 
     const onTypingStart = ({ chatId: cId }: { chatId: string }) => {
@@ -211,8 +224,8 @@ export default function ChatArea({ chatId, chats, onBack }: Props) {
     setLoadingMore(true);
     try {
       const { data } = await getMessages(chatId, nextPage);
-      const older = (data.messages || []).reverse();
-      setMessages((prev) => [...older, ...prev]);
+      const older = data.messages || [];
+      setMessages((prev) => sortMessagesChronologically([...older, ...prev]));
       setPage(nextPage);
     } catch {}
     finally { setLoadingMore(false); }
