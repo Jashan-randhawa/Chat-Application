@@ -36,6 +36,13 @@ function isVoiceNote(url: string): boolean {
   return name.startsWith("voice-note-") || name.endsWith(".webm") || name.endsWith(".ogg");
 }
 
+const VOICE_WAVEFORM_BAR_HEIGHTS = [
+  0.32, 0.45, 0.72, 0.58, 0.88, 0.66, 0.4, 0.84,
+  0.5, 0.62, 0.78, 0.35, 0.7, 0.52, 0.9, 0.42,
+  0.65, 1, 0.55, 0.74, 0.38, 0.8, 0.63, 0.47,
+  0.86, 0.54, 0.76, 0.44, 0.69, 0.51, 0.82, 0.46,
+];
+
 // ── WhatsApp-style voice note player ─────────────────────────────────────────
 function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
   const [playing, setPlaying] = useState(false);
@@ -67,7 +74,6 @@ function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  const bars = [0.32, 0.45, 0.72, 0.58, 0.88, 0.66, 0.4, 0.84, 0.5, 0.62, 0.78, 0.35, 0.7, 0.52, 0.9, 0.42, 0.65, 1, 0.55, 0.74, 0.38, 0.8, 0.63, 0.47, 0.86, 0.54, 0.76, 0.44, 0.69, 0.51, 0.82, 0.46];
   const activeBar = isSelf ? "bg-primary-foreground" : "bg-primary";
   const idleBar = isSelf ? "bg-primary-foreground/35" : "bg-muted-foreground/35";
 
@@ -97,8 +103,8 @@ function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
 
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-end gap-[2px] h-7">
-          {bars.map((h, i) => {
-            const barProgress = ((i + 1) / bars.length) * 100;
+          {VOICE_WAVEFORM_BAR_HEIGHTS.map((h, i) => {
+            const barProgress = (i / VOICE_WAVEFORM_BAR_HEIGHTS.length) * 100;
             return (
               <div
                 key={i}
