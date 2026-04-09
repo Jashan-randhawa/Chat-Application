@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatTime, fileFormat } from "@/lib/features";
 import type { Message } from "@/store/appStore";
+import VoiceMessage from "./VoiceMessage";
 import { motion } from "framer-motion";
-import { Download, FileText, Music, Video, ZoomIn, Play, Pause } from "lucide-react";
+import { Download, FileText, Music, Video, ZoomIn } from "lucide-react";
 
 interface Props {
   message: Message;
@@ -42,90 +43,6 @@ const VOICE_WAVEFORM_BAR_HEIGHTS = [
   0.65, 1, 0.55, 0.74, 0.38, 0.8, 0.63, 0.47,
   0.86, 0.54, 0.76, 0.44, 0.69, 0.51, 0.82, 0.46,
 ];
-
-// ── WhatsApp-style voice note player ─────────────────────────────────────────
-function VoiceNotePlayer({ url, isSelf }: { url: string; isSelf: boolean }) {
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const fmt = (s: number) => {
-    if (!isFinite(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60).toString().padStart(2, "0");
-    return `${m}:${sec}`;
-  };
-
-  const togglePlay = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); }
-    else { a.play(); setPlaying(true); }
-  };
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
-  };
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
-  };
-  const handleEnded = () => { setPlaying(false); setCurrentTime(0); };
-
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-
-  const activeBar = isSelf ? "bg-primary-foreground" : "bg-primary";
-  const idleBar = isSelf ? "bg-primary-foreground/35" : "bg-muted-foreground/35";
-
-  return (
-    <div className={cn(
-      "flex items-center gap-2.5 rounded-2xl px-2.5 py-2 min-w-[220px] max-w-[300px]",
-      isSelf ? "bg-black/10" : "bg-black/5"
-    )}>
-      <audio
-        ref={audioRef}
-        src={url}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-        preload="metadata"
-      />
-
-      <button
-        onClick={togglePlay}
-        className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-          isSelf ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90" : "bg-primary text-primary-foreground hover:bg-primary/90"
-        )}
-      >
-        {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-      </button>
-
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <div className="flex items-end gap-[2px] h-7">
-          {VOICE_WAVEFORM_BAR_HEIGHTS.map((h, i) => {
-            const barProgress = (i / (VOICE_WAVEFORM_BAR_HEIGHTS.length - 1)) * 100;
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "flex-1 rounded-full transition-colors",
-                  barProgress <= progress ? activeBar : idleBar
-                )}
-                style={{ height: `${Math.max(22, h * 100)}%` }}
-              />
-            );
-          })}
-        </div>
-        <div className="flex items-center justify-end">
-          <span className={cn("text-[11px] font-medium tabular-nums", isSelf ? "text-primary-foreground/80" : "text-muted-foreground")}>
-            {playing || currentTime > 0 ? fmt(currentTime) : fmt(duration)}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Image with lightbox ───────────────────────────────────────────────────────
 function ImageAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
@@ -181,9 +98,20 @@ function VideoAttachment({ url }: { url: string }) {
   );
 }
 
-function AudioAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
+function AudioAttachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
   // Voice notes get the fancy player; other audio files get the compact one
-  if (isVoiceNote(url)) return <VoiceNotePlayer url={url} isSelf={isSelf} />;
+  if (isVoiceNote(url)) {
+    return (
+      <VoiceMessage
+        audioUrl={url}
+        msg={{
+          from: isSelf ? "me" : "other",
+          time,
+          waveform: VOICE_WAVEFORM_BAR_HEIGHTS,
+        }}
+      />
+    );
+  }
 
   return (
     <div className={cn("flex items-center gap-2 rounded-xl px-3 py-2 max-w-[260px]",
@@ -227,14 +155,25 @@ function FileAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
   );
 }
 
-function Attachment({ url, isSelf }: { url: string; isSelf: boolean }) {
+function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
   const type = fileFormat(url);
   if (type === "image") return <ImageAttachment url={url} isSelf={isSelf} />;
   if (type === "video") return <VideoAttachment url={url} />;
-  if (type === "audio") return <AudioAttachment url={url} isSelf={isSelf} />;
+  if (type === "audio") return <AudioAttachment url={url} isSelf={isSelf} time={time} />;
   // webm/ogg uploaded as voice notes won't match "audio" via extension check — detect manually
   const fname = getFileName(url).toLowerCase();
-  if (fname.endsWith(".webm") || fname.endsWith(".ogg")) return <VoiceNotePlayer url={url} isSelf={isSelf} />;
+  if (fname.endsWith(".webm") || fname.endsWith(".ogg")) {
+    return (
+      <VoiceMessage
+        audioUrl={url}
+        msg={{
+          from: isSelf ? "me" : "other",
+          time,
+          waveform: VOICE_WAVEFORM_BAR_HEIGHTS,
+        }}
+      />
+    );
+  }
   return <FileAttachment url={url} isSelf={isSelf} />;
 }
 
@@ -280,7 +219,7 @@ export default function MessageBubble({ message, isSelf, showName }: Props) {
         {hasAttachments && (
           <div className={cn("space-y-1.5", message.content ? "mb-2" : "")}>
             {message.attachments!.map((att, i) => (
-              <Attachment key={i} url={att.url} isSelf={isSelf} />
+              <Attachment key={i} url={att.url} isSelf={isSelf} time={formatTime(message.createdAt)} />
             ))}
           </div>
         )}
