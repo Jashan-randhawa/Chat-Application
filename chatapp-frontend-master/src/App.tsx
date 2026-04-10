@@ -13,6 +13,7 @@ import ChatManagement from "./pages/admin/ChatManagement";
 import MessageManagement from "./pages/admin/MessageManagement";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loader } = useAppStore();
@@ -95,6 +96,7 @@ const App = () => (
   <>
     <Toaster />
     <AppContent />
+    <Analytics />
   </>
 );
 
