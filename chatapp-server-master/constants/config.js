@@ -13,7 +13,9 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: origin ${origin} not allowed`));
+      const err = new Error(`CORS: origin ${origin} not allowed`);
+      err.statusCode = 403;
+      callback(err);
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE"],

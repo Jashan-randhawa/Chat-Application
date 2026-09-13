@@ -16,6 +16,7 @@ const adminLogin = TryCatch(async (req, res, next) => {
 
   const token = jwt.sign({ secretKey }, process.env.JWT_SECRET, {
     expiresIn: "15m",
+    algorithm: "HS256",
   });
 
   return res

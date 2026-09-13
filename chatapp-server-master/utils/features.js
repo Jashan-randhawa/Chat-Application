@@ -16,13 +16,20 @@ const connectDB = (uri) => {
     .connect(uri, { dbName: "Chattu" })
     .then((data) => console.log(`Connected to DB: ${data.connection.host}`))
     .catch((err) => {
-      throw err;
+      // Throwing inside a .catch() callback becomes an unhandled promise
+      // rejection, which crashes the entire Node process (taking every open
+      // socket connection down with it) rather than just failing the DB
+      // connection. Log clearly and exit deliberately instead, mirroring
+      // the fail-fast behavior of the env-var check in app.js.
+      console.error("MongoDB connection failed:", err.message);
+      process.exit(1);
     });
 };
 
 const sendToken = (res, user, code, message) => {
   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "15d",
+    algorithm: "HS256",
   });
 
   return res

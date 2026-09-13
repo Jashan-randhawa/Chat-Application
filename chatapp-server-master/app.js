@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { v2 as cloudinary } from "cloudinary";
 import {
   CALL_ANSWER,
@@ -38,10 +40,33 @@ dotenv.config({
   path: "./.env",
 });
 
+// Fail fast if any required secret/config is missing, rather than silently
+// falling back to an insecure default (see ADMIN_SECRET_KEY below for why
+// this matters).
+const REQUIRED_ENV_VARS = [
+  "MONGO_URI",
+  "JWT_SECRET",
+  "ADMIN_SECRET_KEY",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+  "CLIENT_URL",
+];
+const missingEnvVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+if (missingEnvVars.length > 0) {
+  console.error(
+    `Missing required environment variable(s): ${missingEnvVars.join(", ")}`
+  );
+  process.exit(1);
+}
+
 const mongoURI = process.env.MONGO_URI;
 const port = process.env.PORT || 3000;
-const envMode = process.env.NODE_ENV.trim() || "PRODUCTION";
-const adminSecretKey = process.env.ADMIN_SECRET_KEY || "adsasdsdfsdfsdfd";
+const envMode = (process.env.NODE_ENV || "PRODUCTION").trim();
+// No fallback: an admin secret with a hardcoded default would let anyone who
+// reads this source create an admin account on any deployment that forgot
+// to set ADMIN_SECRET_KEY. The startup check above guarantees this is set.
+const adminSecretKey = process.env.ADMIN_SECRET_KEY;
 const userSocketIDs = new Map();
 const onlineUsers = new Set();
 const typingRateLimiter = new Map();
@@ -63,9 +88,26 @@ const io = new Server(server, {
 app.set("io", io);
 
 // Using Middlewares Here
+app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
+
+// Rate limiting on the endpoints that are actually brute-forceable:
+// user login, user registration, and admin login. General API routes are
+// already gated by isAuthenticated/adminOnly, so they don't need the same
+// treatment.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many attempts, please try again later" },
+});
+
+app.use("/api/v1/user/login", authLimiter);
+app.use("/api/v1/user/new", authLimiter);
+app.use("/api/v1/admin/verify", authLimiter);
 
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/chat", chatRoute);
