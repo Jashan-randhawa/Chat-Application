@@ -1,8 +1,6 @@
 import ChatAvatar from "./Avatar";
 import { ArrowLeft, Phone, Info, Search } from "lucide-react";
 import type { Chat } from "@/store/appStore";
-import PaletteSwitcher from "@/components/PaletteSwitcher";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Props {
   chat: Chat;
@@ -29,7 +27,7 @@ export default function ChatHeader({
   const canCall = !chat.groupChat && !!onCall;
 
   return (
-    <div className="flex items-center justify-between gap-3 px-3.5 md:px-6 py-3 bg-card/85 backdrop-blur-xl border-b border-border/60 select-none z-20 sticky top-0 transition-colors">
+    <div className="flex items-center justify-between gap-3 px-3.5 md:px-6 py-3 bg-card/90 dark:bg-[#111622] backdrop-blur-xl border-b border-border/60 select-none z-20 sticky top-0 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onBack}
@@ -107,10 +105,6 @@ export default function ChatHeader({
         >
           <Phone className="w-4 h-4" />
         </button>
-
-        {/* Theme and Executive Palette Switchers */}
-        <PaletteSwitcher compact align="right" />
-        <ThemeToggle />
 
         {onOpenDetails && (
           <button

@@ -204,7 +204,7 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
   };
 
   return (
-    <div className="relative border-t border-border/60 bg-card/85 backdrop-blur-xl select-none z-20">
+    <div className="relative border-t border-border/60 bg-card/90 dark:bg-[#111622] backdrop-blur-xl select-none z-20">
       {/* Hidden File Input */}
       <input
         ref={fileRef}

@@ -486,16 +486,10 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
   // Empty state when no chat selected
   if (!chatId || !chat) {
     return (
-      <div
-        className={cn(
-          "hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden transition-colors",
-          activeTheme.canvasLight,
-          "dark:" + activeTheme.canvasDark
-        )}
-      >
+      <div className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-[#0b0f17] transition-colors">
         <div className="flex flex-col items-center gap-4 animate-fade-in relative z-10 text-center max-w-sm px-4">
-          <div className="w-20 h-20 rounded-3xl bg-card/85 dark:bg-zinc-900/85 border border-border/80 flex items-center justify-center shadow-xl backdrop-blur-xl">
-            <MessageSquare className={cn("w-9 h-9 animate-pulse", activeTheme.accentText)} />
+          <div className="w-20 h-20 rounded-3xl bg-card border border-border/80 flex items-center justify-center shadow-xl">
+            <MessageSquare className="w-9 h-9 text-primary animate-pulse" />
           </div>
           <div>
             <h2 className="text-xl font-bold font-display tracking-tight text-foreground">
@@ -600,11 +594,7 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
         <div className="flex-1 relative overflow-hidden">
           <div
             ref={scrollRef}
-            className={cn(
-              "h-full overflow-y-auto px-3 md:px-6 py-4 space-y-2.5 scroll-smooth transition-colors",
-              activeTheme.canvasLight,
-              "dark:" + activeTheme.canvasDark
-            )}
+            className="h-full overflow-y-auto px-3 md:px-6 py-4 space-y-2.5 scroll-smooth bg-slate-100/70 dark:bg-[#0b0f17] transition-colors"
           >
             {/* Top sentinel for loading older messages */}
             <div ref={topSentinelRef} className="h-1" />
