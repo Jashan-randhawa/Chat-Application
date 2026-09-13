@@ -18,6 +18,7 @@ import {
   Smile,
 } from "lucide-react";
 import { toast } from "sonner";
+import { parseReplyMessage, scrollToQuotedMessage } from "@/lib/replyUtils";
 
 interface Props {
   message: Message;
@@ -295,9 +296,18 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
     message.attachments.length === 1 &&
     isVoiceNote(message.attachments[0].url);
 
+  const { replyTo: parsedReply, cleanContent } = parseReplyMessage(message.content || "");
+  const effectiveReply = parsedReply || (message.replyTo ? {
+    id: message.replyTo._id,
+    sender: message.replyTo.senderName,
+    text: message.replyTo.content,
+    type: "text" as const,
+  } : null);
+
   const handleCopy = () => {
-    if (!message.content) return;
-    navigator.clipboard.writeText(message.content);
+    const textToCopy = cleanContent || message.content;
+    if (!textToCopy) return;
+    navigator.clipboard.writeText(textToCopy);
     toast.success("Copied to clipboard");
   };
 
@@ -309,125 +319,171 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.16 }}
-      className={cn("group/msg relative flex items-end gap-1.5 my-0.5", isSelf ? "justify-end" : "justify-start")}
-    >
-      {/* Quick Action Floating Toolbar (visible on hover) */}
-      <div
-        className={cn(
-          "absolute -top-7 opacity-0 group-hover/msg:opacity-100 transition-all duration-150 flex items-center gap-1 bg-card/95 border border-border rounded-full p-1 shadow-md z-10",
-          isSelf ? "right-2" : "left-2"
-        )}
+    <div className="relative group/wrapper">
+      <motion.div
+        initial={{ opacity: 0, y: 6, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.16 }}
+        drag={onReply ? "x" : false}
+        dragConstraints={{ left: 0, right: 60 }}
+        dragElastic={0.4}
+        onDragEnd={(_, info) => {
+          if (info.offset.x > 45 && onReply) {
+            onReply(message);
+          }
+        }}
+        onDoubleClick={() => {
+          if (onReply) onReply(message);
+        }}
+        className={cn("group/msg relative flex items-end gap-1.5 my-0.5 select-text touch-pan-y", isSelf ? "justify-end" : "justify-start")}
       >
-        <button
-          onClick={() => setShowReactionPicker(!showReactionPicker)}
-          className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
-          title="React"
-        >
-          <Smile className="w-3.5 h-3.5" />
-        </button>
+        {/* Swipe to reply icon feedback indicator */}
         {onReply && (
-          <button
-            onClick={() => onReply(message)}
-            className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
-            title="Reply"
-          >
-            <Reply className="w-3.5 h-3.5" />
-          </button>
-        )}
-        {message.content && (
-          <button
-            onClick={handleCopy}
-            className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
-            title="Copy"
-          >
-            <Copy className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* Floating Emoji Picker Tray */}
-      {showReactionPicker && (
-        <div
-          className={cn(
-            "absolute -top-11 z-20 flex items-center gap-1.5 bg-card border border-border rounded-full px-2 py-1 shadow-lg",
-            isSelf ? "right-0" : "left-0"
-          )}
-        >
-          {["👍", "❤️", "😂", "🔥", "🎉", "😮"].map((emoji) => (
-            <button
-              key={emoji}
-              onClick={() => handleToggleReaction(emoji)}
-              className="text-sm hover:scale-125 transition-transform p-0.5 cursor-pointer"
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Main Bubble */}
-      <div
-        className={cn(
-          "max-w-[82%] md:max-w-[68%] relative transition-all",
-          hasAttachments && !message.content
-            ? ""
-            : cn(
-                "px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md",
-                isSelf
-                  ? cn(activeTheme.sentBubbleClass, "rounded-tr-xs")
-                  : "bg-card/90 dark:bg-zinc-900/90 text-card-foreground border border-border/80 rounded-tl-xs"
-              )
-        )}
-      >
-        {/* Sender Name for Group Chats */}
-        {showName && !isSelf && message.sender && (
-          <p className={cn("text-xs font-semibold mb-1 tracking-tight", getNameColor(message.sender.name))}>
-            {message.sender.name}
-          </p>
-        )}
-
-        {/* Quoted Message / Reply Banner */}
-        {message.replyTo && (
-          <div
-            className={cn(
-              "mb-2 p-2 rounded-xl text-xs border-l-2 bg-black/5 dark:bg-white/5",
-              isSelf ? "border-white/60 text-white/90" : "border-primary text-foreground"
-            )}
-          >
-            <p className="font-semibold text-[11px] opacity-90">{message.replyTo.senderName}</p>
-            <p className="truncate opacity-75 text-[10px] mt-0.5">{message.replyTo.content}</p>
+          <div className="absolute -left-7 top-1/2 -translate-y-1/2 opacity-0 group-active/msg:opacity-80 transition-opacity pointer-events-none text-primary">
+            <Reply className="w-4 h-4" />
           </div>
         )}
 
-        {/* Attachments */}
-        {hasAttachments && (
-          <div className={cn("space-y-1.5", message.content ? "mb-2" : "")}>
-            {message.attachments!.map((att, i) => (
-              <Attachment
-                key={i}
-                url={att.url}
-                isSelf={isSelf}
-                time={formatTime(message.createdAt)}
-                isRead={isRead}
-                isDelivered={isDelivered}
-              />
+        {/* Quick Action Floating Toolbar (visible on hover) */}
+        <div
+          className={cn(
+            "absolute -top-7 opacity-0 group-hover/msg:opacity-100 transition-all duration-150 flex items-center gap-1 bg-card/95 border border-border rounded-full p-1 shadow-md z-10",
+            isSelf ? "right-2" : "left-2"
+          )}
+        >
+          <button
+            onClick={() => setShowReactionPicker(!showReactionPicker)}
+            className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+            title="React"
+          >
+            <Smile className="w-3.5 h-3.5" />
+          </button>
+          {onReply && (
+            <button
+              onClick={() => onReply(message)}
+              className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+              title="Reply"
+            >
+              <Reply className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {(cleanContent || message.content) && (
+            <button
+              onClick={handleCopy}
+              className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+              title="Copy"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Floating Emoji Picker Tray */}
+        {showReactionPicker && (
+          <div
+            className={cn(
+              "absolute -top-11 z-20 flex items-center gap-1.5 bg-card border border-border rounded-full px-2 py-1 shadow-lg",
+              isSelf ? "right-0" : "left-0"
+            )}
+          >
+            {["👍", "❤️", "😂", "🔥", "🎉", "😮"].map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => handleToggleReaction(emoji)}
+                className="text-sm hover:scale-125 transition-transform p-0.5 cursor-pointer"
+              >
+                {emoji}
+              </button>
             ))}
           </div>
         )}
 
-        {/* Message Text Content */}
-        {message.content && (
-          <p className="text-sm leading-relaxed break-words whitespace-pre-wrap selection:bg-primary/20 font-normal">
-            {message.content}
-          </p>
-        )}
+        {/* Main Bubble */}
+        <div
+          className={cn(
+            "max-w-[82%] md:max-w-[68%] relative transition-all",
+            hasAttachments && !cleanContent
+              ? ""
+              : cn(
+                  "px-3.5 py-2 rounded-2xl shadow-sm backdrop-blur-md",
+                  isSelf
+                    ? cn(activeTheme.sentBubbleClass, "rounded-tr-xs")
+                    : "bg-card/90 dark:bg-zinc-900/90 text-card-foreground border border-border/80 rounded-tl-xs"
+                )
+          )}
+        >
+          {/* Sender Name for Group Chats */}
+          {showName && !isSelf && message.sender && (
+            <p className={cn("text-xs font-semibold mb-1 tracking-tight", getNameColor(message.sender.name))}>
+              {message.sender.name}
+            </p>
+          )}
 
-        {/* Timestamp and Read Status */}
-        {!onlyVoiceNoteAttachment && (
+          {/* WhatsApp-Style Quoted Message Card with Click-to-Scroll Jump */}
+          {effectiveReply && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                if (effectiveReply.id) {
+                  scrollToQuotedMessage(effectiveReply.id);
+                }
+              }}
+              title={effectiveReply.id ? "Click to jump to quoted message" : undefined}
+              className={cn(
+                "mb-2 p-2 rounded-xl text-xs flex items-center justify-between gap-2.5 transition-colors cursor-pointer select-none",
+                isSelf
+                  ? "bg-black/15 hover:bg-black/25 text-white/95 border-l-4 border-white/90"
+                  : "bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-foreground border-l-4 border-primary"
+              )}
+            >
+              <div className="flex-1 min-w-0 pr-1">
+                <div className="flex items-center gap-1">
+                  <Reply className={cn("w-3 h-3 shrink-0", isSelf ? "text-white/80" : "text-primary")} />
+                  <p className={cn("font-semibold text-[11px] truncate", isSelf ? "text-white" : "text-primary")}>
+                    {effectiveReply.sender}
+                  </p>
+                </div>
+                <p className="truncate opacity-80 text-[11px] mt-0.5 line-clamp-1">
+                  {effectiveReply.text || "Message"}
+                </p>
+              </div>
+              {effectiveReply.thumbnailUrl && (
+                <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-border/40">
+                  <img
+                    src={effectiveReply.thumbnailUrl}
+                    alt="attachment preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Attachments */}
+          {hasAttachments && (
+            <div className={cn("space-y-1.5", cleanContent ? "mb-2" : "")}>
+              {message.attachments!.map((att, i) => (
+                <Attachment
+                  key={i}
+                  url={att.url}
+                  isSelf={isSelf}
+                  time={formatTime(message.createdAt)}
+                  isRead={isRead}
+                  isDelivered={isDelivered}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Message Text Content */}
+          {cleanContent && (
+            <p className="text-sm leading-relaxed break-words whitespace-pre-wrap selection:bg-primary/20 font-normal">
+              {cleanContent}
+            </p>
+          )}
+
+          {/* Timestamp and Read Status */}
+          {!onlyVoiceNoteAttachment && (
           <div
             className={cn(
               "flex items-center justify-end gap-1 mt-1 select-none",
@@ -454,6 +510,7 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
         )}
       </div>
     </motion.div>
+  </div>
   );
 }
 

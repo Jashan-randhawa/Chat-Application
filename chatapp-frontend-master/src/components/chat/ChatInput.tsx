@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fileFormat } from "@/lib/features";
+import { encodeReplyMessage, getMessageSnippet } from "@/lib/replyUtils";
 import VoiceRecorder from "./VoiceRecorder";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -120,14 +121,19 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
     });
   };
 
+  // Auto-focus input when replying
+  useEffect(() => {
+    if (replyTo) {
+      inputRef.current?.focus();
+    }
+  }, [replyTo]);
+
   const handleSendText = (content: string) => {
     if (!content.trim() || !socket || !chatId) return;
     stopTypingNow();
 
-    let finalMessage = content.trim();
-    if (replyTo) {
-      finalMessage = `[Replying to ${replyTo.sender.name}: "${replyTo.content.slice(0, 40)}"]\n${finalMessage}`;
-    }
+    const trimmed = content.trim();
+    const finalMessage = replyTo ? encodeReplyMessage(replyTo, trimmed) : trimmed;
 
     socket.emit(EVENTS.NEW_MESSAGE, { chatId, message: finalMessage });
     onCancelReply?.();
@@ -172,10 +178,8 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       formData.append("chatId", chatId);
 
       if (hasText) {
-        let finalCaption = text.trim();
-        if (replyTo) {
-          finalCaption = `[Replying to ${replyTo.sender.name}: "${replyTo.content.slice(0, 40)}"]\n${finalCaption}`;
-        }
+        const trimmed = text.trim();
+        const finalCaption = replyTo ? encodeReplyMessage(replyTo, trimmed) : trimmed;
         if (socket) {
           socket.emit(EVENTS.NEW_MESSAGE, { chatId, message: finalCaption });
         }
@@ -202,6 +206,8 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
     setShowEmojiPicker(false);
     inputRef.current?.focus();
   };
+
+  const replySnippet = replyTo ? getMessageSnippet(replyTo) : null;
 
   return (
     <div className="relative border-t border-border/60 bg-card/90 dark:bg-[#111622] backdrop-blur-xl select-none z-20">
@@ -240,29 +246,51 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Reply Banner */}
-      {replyTo && (
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/70 dark:bg-zinc-900/80 border-b border-border/60">
-          <div className="flex items-center gap-2 overflow-hidden text-xs">
-            <Reply className="w-3.5 h-3.5 text-primary shrink-0" />
-            <div className="truncate">
-              <span className="font-semibold text-foreground mr-1">
-                Replying to {replyTo.sender.name}:
-              </span>
-              <span className="text-muted-foreground truncate">
-                {replyTo.content || "Attachment"}
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={onCancelReply}
-            className="p-1 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors cursor-pointer"
-            title="Cancel reply"
+      {/* WhatsApp-Style Reply Docked Banner */}
+      <AnimatePresence>
+        {replyTo && replySnippet && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: 8, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden border-b border-border/60 bg-muted/60 dark:bg-zinc-900/90"
           >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+            <div className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-3 overflow-hidden text-xs flex-1">
+                <div className="w-1 self-stretch rounded-full bg-primary shrink-0" />
+                <div className="truncate flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <Reply className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="font-semibold text-primary truncate">
+                      {replyTo.sender?.name || "User"}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground truncate text-[11px] mt-0.5">
+                    {replySnippet.text}
+                  </p>
+                </div>
+                {replySnippet.thumbnailUrl && (
+                  <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-border/60">
+                    <img
+                      src={replySnippet.thumbnailUrl}
+                      alt="preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={onCancelReply}
+                className="ml-2 p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer shrink-0"
+                title="Cancel reply"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Pending Files Previews */}
       {pendingFiles.length > 0 && (

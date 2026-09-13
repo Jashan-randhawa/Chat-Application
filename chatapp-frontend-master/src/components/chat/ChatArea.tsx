@@ -669,7 +669,7 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
               const showDateSeparator = currentDay !== prevDay;
 
               return (
-                <div key={msg._id} className="space-y-2">
+                <div id={`msg-${msg._id}`} key={msg._id} className="space-y-2 rounded-2xl transition-all duration-300">
                   {showDateSeparator && (
                     <div className="flex justify-center my-3 select-none">
                       <span className="px-3.5 py-1 rounded-full bg-card/85 dark:bg-zinc-900/85 border border-border/80 text-[10px] font-semibold tracking-wider uppercase text-muted-foreground shadow-xs backdrop-blur-md">
