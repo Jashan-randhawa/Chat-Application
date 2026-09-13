@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAppStore, type Chat } from "@/store/appStore";
 import { useSocket } from "@/context/SocketContext";
 import { EVENTS } from "@/config/constants";
@@ -11,10 +12,24 @@ import { Loader2 } from "lucide-react";
 export default function Index() {
   const { user, setNewMessagesAlert, incrementNotification, setOnlineUsers } = useAppStore();
   const socket = useSocket();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const chatParam = searchParams.get("chat");
 
   const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const [selectedChat, setSelectedChat] = useState<string | null>(chatParam);
   const [chatsLoading, setChatsLoading] = useState(true);
+
+  useEffect(() => {
+    if (chatParam && chatParam !== selectedChat) {
+      setSelectedChat(chatParam);
+    }
+  }, [chatParam]);
+
+  const handleSelectChat = (id: string | null) => {
+    setSelectedChat(id);
+    if (id) setSearchParams({ chat: id });
+    else setSearchParams({});
+  };
 
   // Fetch chats
   const fetchChats = useCallback(async () => {
@@ -85,7 +100,7 @@ export default function Index() {
       )}>
         <Sidebar
           selectedChat={selectedChat}
-          onSelectChat={setSelectedChat}
+          onSelectChat={handleSelectChat}
           chats={chats}
           onRefreshChats={fetchChats}
         />
@@ -97,7 +112,7 @@ export default function Index() {
         <ChatArea
           chatId={selectedChat}
           chats={chats}
-          onBack={() => setSelectedChat(null)}
+          onBack={() => handleSelectChat(null)}
           onRefreshChats={fetchChats}
         />
       </div>

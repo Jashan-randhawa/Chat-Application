@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGetMessages } from "@/services/api";
 import { formatDate } from "@/lib/features";
+import { parseReplyMessage } from "@/lib/replyUtils";
 import { Loader2, Search, MessageSquare, Paperclip, Image, Video, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -105,7 +106,9 @@ export default function MessageManagement() {
               {/* Content */}
               <div className="col-span-5">
                 {m.content ? (
-                  <p className="text-sm text-white/50 truncate">{m.content}</p>
+                  <p className="text-sm text-white/50 truncate">
+                    {parseReplyMessage(m.content).cleanContent || m.content}
+                  </p>
                 ) : (
                   <span className="text-xs text-white/20 italic">Media only</span>
                 )}
