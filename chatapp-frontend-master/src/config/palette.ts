@@ -102,8 +102,14 @@ export const LUXURY_PALETTES: Record<PaletteKey, PaletteTheme> = {
 export const DEFAULT_PALETTE: PaletteKey = "violet";
 
 export function getStoredPalette(): PaletteKey {
-  if (typeof window === "undefined") return DEFAULT_PALETTE;
-  const saved = localStorage.getItem("chatapp-palette");
-  if (saved && saved in LUXURY_PALETTES) return saved as PaletteKey;
+  try {
+    if (typeof window === "undefined") return DEFAULT_PALETTE;
+    const saved = localStorage.getItem("chatapp-palette");
+    if (saved && Object.prototype.hasOwnProperty.call(LUXURY_PALETTES, saved)) {
+      return saved as PaletteKey;
+    }
+  } catch {
+    // ignore
+  }
   return DEFAULT_PALETTE;
 }

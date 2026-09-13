@@ -7,9 +7,13 @@
     <meta name="description" content="Modern Executive Real-time Chat Application" />
     <script>
       (function() {
-        const theme = localStorage.getItem('chatapp-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark');
-        if (theme === 'dark') document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
+        try {
+          var theme = localStorage.getItem('chatapp-theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark');
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
       })();
     </script>
   </head>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
-import { useAppStore, type Message } from "@/store/appStore";
+import { useAppStore, type Message, type Chat } from "@/store/appStore";
 import { LUXURY_PALETTES } from "@/config/palette";
 import { EVENTS } from "@/config/constants";
 import { getMessages, getChatDetails, markMessageAsRead, sendAttachments } from "@/services/api";
@@ -21,9 +21,9 @@ import {
   Camera,
   Mic,
 } from "lucide-react";
-import type { Chat } from "@/store/appStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   chatId: string | null;
@@ -145,7 +145,7 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
   // IntersectionObserver to auto-load older messages
   useEffect(() => {
     const sentinel = topSentinelRef.current;
-    if (!sentinel) return;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadingMore && page < totalPages) {
