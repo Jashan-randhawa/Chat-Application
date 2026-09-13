@@ -128,15 +128,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Palette state
-  const [palette, setPalette] = useState<PaletteKey>(() => {
-    const saved = localStorage.getItem("chatapp-palette");
-    if (saved && saved in PALETTES) return saved as PaletteKey;
-    return "violet"; // Default to Obsidian Iris
-  });
-
-  const activeTheme = PALETTES[palette];
+  const { setUser, palette, setPalette } = useAppStore();
+  const activeTheme = PALETTES[palette] || PALETTES.violet;
 
   // Form states
   const [username, setUsername] = useState("");
@@ -148,7 +141,6 @@ export default function Login() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useAppStore();
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { useAppStore, type Message } from "@/store/appStore";
+import { LUXURY_PALETTES } from "@/config/palette";
 import { EVENTS } from "@/config/constants";
 import { getMessages, getChatDetails, markMessageAsRead, sendAttachments } from "@/services/api";
 import ChatHeader from "./ChatHeader";
@@ -65,7 +66,8 @@ function formatMessageDay(dateStr: string): string {
 
 export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Props) {
   const socket = useSocket();
-  const { user, onlineUsers, removeNewMessagesAlert } = useAppStore();
+  const { user, onlineUsers, removeNewMessagesAlert, palette } = useAppStore();
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
 
   // Scroll refs
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -484,18 +486,23 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
   // Empty state when no chat selected
   if (!chatId || !chat) {
     return (
-      <div className="hidden md:flex flex-1 flex-col items-center justify-center chat-pattern relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.08),transparent_60%)]" />
+      <div
+        className={cn(
+          "hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden transition-colors",
+          activeTheme.canvasLight,
+          "dark:" + activeTheme.canvasDark
+        )}
+      >
         <div className="flex flex-col items-center gap-4 animate-fade-in relative z-10 text-center max-w-sm px-4">
-          <div className="w-20 h-20 rounded-3xl bg-card border border-border flex items-center justify-center shadow-lg">
-            <MessageSquare className="w-9 h-9 text-primary animate-pulse" />
+          <div className="w-20 h-20 rounded-3xl bg-card/85 dark:bg-zinc-900/85 border border-border/80 flex items-center justify-center shadow-xl backdrop-blur-xl">
+            <MessageSquare className={cn("w-9 h-9 animate-pulse", activeTheme.accentText)} />
           </div>
           <div>
             <h2 className="text-xl font-bold font-display tracking-tight text-foreground">
-              Encrypted Real-Time Chat
+              Antigravity Chat
             </h2>
             <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-              Select a conversation from the sidebar to start messaging, sharing media, and making voice calls.
+              Select a conversation from the sidebar to start encrypted messaging, sharing media, and making voice calls.
             </p>
           </div>
         </div>
@@ -593,7 +600,11 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
         <div className="flex-1 relative overflow-hidden">
           <div
             ref={scrollRef}
-            className="h-full overflow-y-auto chat-pattern px-3 md:px-6 py-4 space-y-2 scroll-smooth"
+            className={cn(
+              "h-full overflow-y-auto px-3 md:px-6 py-4 space-y-2.5 scroll-smooth transition-colors",
+              activeTheme.canvasLight,
+              "dark:" + activeTheme.canvasDark
+            )}
           >
             {/* Top sentinel for loading older messages */}
             <div ref={topSentinelRef} className="h-1" />
@@ -671,7 +682,7 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
                 <div key={msg._id} className="space-y-2">
                   {showDateSeparator && (
                     <div className="flex justify-center my-3 select-none">
-                      <span className="px-3 py-0.5 rounded-full bg-card/85 border border-border/80 text-[10px] font-semibold tracking-wide text-muted-foreground shadow-2xs backdrop-blur-xs">
+                      <span className="px-3.5 py-1 rounded-full bg-card/85 dark:bg-zinc-900/85 border border-border/80 text-[10px] font-semibold tracking-wider uppercase text-muted-foreground shadow-xs backdrop-blur-md">
                         {currentDay}
                       </span>
                     </div>
@@ -689,12 +700,12 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
             {/* Typing indicator */}
             {isTyping && (
               <div className="flex justify-start my-1 animate-fade-in">
-                <div className="bg-chat-bubble-received border border-border/40 rounded-2xl rounded-bl-xs px-4 py-2 shadow-xs">
+                <div className="bg-card/90 dark:bg-zinc-900/90 border border-border/70 rounded-2xl rounded-tl-xs px-4 py-2.5 shadow-sm backdrop-blur-md">
                   <div className="flex gap-1.5 items-center h-4">
                     {[0, 0.2, 0.4].map((delay, i) => (
                       <span
                         key={i}
-                        className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce"
+                        className={cn("w-2 h-2 rounded-full animate-bounce", activeTheme.dotColor)}
                         style={{ animationDelay: `${delay}s`, animationDuration: "1s" }}
                       />
                     ))}

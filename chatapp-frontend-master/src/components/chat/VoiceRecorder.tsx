@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { Mic, Trash2, Send, Lock, Square } from "lucide-react";
+import { useAppStore } from "@/store/appStore";
+import { LUXURY_PALETTES } from "@/config/palette";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -10,17 +15,16 @@ function formatTime(seconds: number) {
 
 interface VoiceRecorderProps {
   onSend: (audio: Blob, duration: number, waveform: number[]) => Promise<void> | void;
-  onText: (text: string) => void;
   disabled?: boolean;
-  compact?: boolean;
 }
 
-export default function VoiceRecorder({ onSend, onText, disabled = false, compact = false }: VoiceRecorderProps) {
-  const [text, setText] = useState("");
+export default function VoiceRecorder({ onSend, disabled = false }: VoiceRecorderProps) {
+  const { palette } = useAppStore();
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+
   const [state, setState] = useState<"idle" | "recording" | "locked">("idle");
   const [elapsed, setElapsed] = useState(0);
   const [liveWave, setLiveWave] = useState<number[]>([]);
-  const [isMicDown, setIsMicDown] = useState(false);
   const [sending, setSending] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -42,7 +46,6 @@ export default function VoiceRecorder({ onSend, onText, disabled = false, compac
     setState("idle");
     setElapsed(0);
     setLiveWave([]);
-    setIsMicDown(false);
     elapsedRef.current = 0;
     samplesRef.current = [];
   };
@@ -75,9 +78,9 @@ export default function VoiceRecorder({ onSend, onText, disabled = false, compac
       timerRef.current = setInterval(() => {
         elapsedRef.current += 1;
         setElapsed(elapsedRef.current);
-        const sample = Math.random() * 0.85 + 0.1;
+        const sample = Math.random() * 0.85 + 0.15;
         samplesRef.current.push(sample);
-        setLiveWave([...samplesRef.current].slice(-20));
+        setLiveWave([...samplesRef.current].slice(-24));
       }, 1000);
     } catch {
       resetRecorderState();
@@ -99,9 +102,9 @@ export default function VoiceRecorder({ onSend, onText, disabled = false, compac
           const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
           const duration = Math.max(1, elapsedRef.current);
           const waveform =
-            samplesRef.current.length > 3
-              ? samplesRef.current.map((v) => Math.max(0.1, Math.min(1, v)))
-              : Array.from({ length: 40 }, () => Math.random() * 0.8 + 0.1);
+            samplesRef.current.length > 0
+              ? samplesRef.current
+              : Array(24).fill(0.4);
 
           setSending(true);
           try {
@@ -110,30 +113,18 @@ export default function VoiceRecorder({ onSend, onText, disabled = false, compac
             setSending(false);
           }
         }
-
         resolve();
       };
-      recorder.stop();
+
+      try {
+        if (recorder.state !== "inactive") recorder.stop();
+      } catch {
+        resolve();
+      }
     });
 
     resetRecorderState();
   };
-
-  useEffect(() => {
-    const onUp = () => {
-      if (isMicDown && state === "recording") {
-        void stopRecording(false);
-      }
-    };
-
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchend", onUp);
-
-    return () => {
-      window.removeEventListener("mouseup", onUp);
-      window.removeEventListener("touchend", onUp);
-    };
-  }, [isMicDown, state]);
 
   useEffect(() => {
     return () => {
@@ -146,93 +137,73 @@ export default function VoiceRecorder({ onSend, onText, disabled = false, compac
   }, []);
 
   if (state !== "idle") {
-    const wrapperClass = compact ? "" : "border-t border-border bg-card px-3 py-2";
     return (
-      <div className={wrapperClass}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="flex items-center gap-3 w-full px-2 py-1 select-none"
+      >
+        {/* Cancel Recording */}
+        <button
+          onClick={() => void stopRecording(true)}
+          disabled={sending}
+          className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+          title="Discard recording"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+
+        {/* Live Recording Indicator */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => void stopRecording(true)}
-            disabled={sending}
-            className="rounded-full p-2 text-muted-foreground hover:bg-accent disabled:opacity-40"
-          >
-            ✕
-          </button>
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-          <span className="w-10 text-sm text-foreground">{formatTime(elapsed)}</span>
-          <div className="flex h-7 flex-1 items-end gap-1">
-            {(liveWave.length > 0 ? liveWave : Array(10).fill(0.3)).map((h, i) => (
-              <div key={i} className="w-1 rounded-sm bg-emerald-500" style={{ height: Math.round(h * 20 + 4) }} />
-            ))}
-          </div>
-          {state === "recording" && (
-            <button
-              onClick={() => {
-                setState("locked");
-                setIsMicDown(false);
-              }}
-              className="rounded-full p-2 text-xs text-muted-foreground hover:bg-accent"
-            >
-              Lock
-            </button>
-          )}
-          <button
-            onClick={() => void stopRecording(false)}
-            disabled={sending}
-            className="rounded-full bg-primary p-3 text-primary-foreground disabled:opacity-40"
-          >
-            {sending ? "…" : "➤"}
-          </button>
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.7)]" />
+          <span className="font-mono text-xs font-semibold text-foreground tracking-tight w-10">
+            {formatTime(elapsed)}
+          </span>
         </div>
-      </div>
+
+        {/* Live Waveform Display */}
+        <div className="flex h-7 flex-1 items-center gap-0.5 px-2 overflow-hidden">
+          {(liveWave.length > 0 ? liveWave : Array(16).fill(0.3)).map((h, i) => (
+            <motion.div
+              key={i}
+              className={cn("w-1 rounded-full transition-all duration-100", activeTheme.dotColor)}
+              style={{ height: Math.max(6, Math.round(h * 24)) }}
+            />
+          ))}
+        </div>
+
+        {/* Send voice recording */}
+        <button
+          onClick={() => void stopRecording(false)}
+          disabled={sending}
+          className={cn(
+            "p-2.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-95",
+            activeTheme.sendBtnClass
+          )}
+          title="Send voice note"
+        >
+          {sending ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
+        </button>
+      </motion.div>
     );
   }
 
-  const wrapperClass = compact ? "" : "border-t border-border bg-card px-3 py-2";
   return (
-    <div className={wrapperClass}>
-      <div className="flex items-center gap-2">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && text.trim()) {
-              e.preventDefault();
-              onText(text.trim());
-              setText("");
-            }
-          }}
-          disabled={disabled || sending}
-          placeholder="Type a message..."
-          className="flex-1 rounded-full bg-muted px-4 py-2 text-sm outline-none disabled:opacity-50"
-        />
-        {text.trim() ? (
-          <button
-            onClick={() => {
-              onText(text.trim());
-              setText("");
-            }}
-            disabled={disabled || sending}
-            className="rounded-full bg-primary p-3 text-primary-foreground disabled:opacity-40"
-          >
-            ➤
-          </button>
-        ) : (
-          <button
-            onMouseDown={() => {
-              setIsMicDown(true);
-              void startRecording();
-            }}
-            onTouchStart={() => {
-              setIsMicDown(true);
-              void startRecording();
-            }}
-            disabled={disabled || sending}
-            className="rounded-full bg-primary p-3 text-primary-foreground disabled:opacity-40"
-          >
-            🎤
-          </button>
-        )}
-      </div>
-    </div>
+    <button
+      onClick={() => void startRecording()}
+      disabled={disabled || sending}
+      className={cn(
+        "p-2.5 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer text-white",
+        activeTheme.sendBtnClass
+      )}
+      title="Record voice note"
+    >
+      <Mic className="w-4 h-4" />
+    </button>
   );
 }

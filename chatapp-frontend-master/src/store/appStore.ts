@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { getMyProfile, logoutUser } from "@/services/api";
 import { EVENTS } from "@/config/constants";
 import { saveToken, clearAll, getStoredUser, saveUser, getToken } from "@/lib/token";
+import { type PaletteKey, getStoredPalette } from "@/config/palette";
 
 export interface User {
   _id: string;
@@ -47,10 +48,12 @@ interface AppState {
   newMessagesAlert: NewMessageAlert[];
   notificationCount: number;
   onlineUsers: string[];
+  palette: PaletteKey;
 
   setUser: (user: User | null, token?: string) => void;
   setIsAdmin: (val: boolean) => void;
   setLoader: (val: boolean) => void;
+  setPalette: (palette: PaletteKey) => void;
   fetchUser: () => Promise<void>;
   logout: () => Promise<void>;
   incrementNotification: () => void;
@@ -79,6 +82,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   newMessagesAlert: getStoredAlerts(),
   notificationCount: 0,
   onlineUsers: [],
+  palette: getStoredPalette(),
+
+  setPalette: (palette) => {
+    localStorage.setItem("chatapp-palette", palette);
+    set({ palette });
+  },
 
   setUser: (user, token) => {
     if (token) saveToken(token);

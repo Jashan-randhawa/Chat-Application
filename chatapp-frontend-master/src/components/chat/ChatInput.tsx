@@ -2,6 +2,8 @@ import { useRef, useState, useEffect } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { EVENTS } from "@/config/constants";
 import { sendAttachments } from "@/services/api";
+import { useAppStore, type Message } from "@/store/appStore";
+import { LUXURY_PALETTES } from "@/config/palette";
 import {
   Send,
   Paperclip,
@@ -17,7 +19,8 @@ import {
 import { toast } from "sonner";
 import { fileFormat } from "@/lib/features";
 import VoiceRecorder from "./VoiceRecorder";
-import type { Message } from "@/store/appStore";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   chatId: string;
@@ -53,6 +56,8 @@ const COMMON_EMOJIS = [
 
 export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
   const socket = useSocket();
+  const { palette } = useAppStore();
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -88,6 +93,14 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
     }, 2500);
   };
 
+  const stopTypingNow = () => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    if (isTypingActiveRef.current && socket && chatId) {
+      socket.emit(EVENTS.STOP_TYPING, { chatId });
+      isTypingActiveRef.current = false;
+    }
+  };
+
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -99,44 +112,34 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const removeFile = (idx: number) => {
+  const removeFile = (index: number) => {
     setPendingFiles((prev) => {
-      const next = [...prev];
-      if (next[idx].previewUrl) URL.revokeObjectURL(next[idx].previewUrl!);
-      next.splice(idx, 1);
-      return next;
+      const target = prev[index];
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((_, i) => i !== index);
     });
   };
 
-  const stopTypingNow = () => {
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    if (isTypingActiveRef.current && socket) {
-      socket.emit(EVENTS.STOP_TYPING, { chatId });
-      isTypingActiveRef.current = false;
-    }
-  };
-
   const handleSendText = (content: string) => {
-    if (!socket || !content.trim()) return;
+    if (!content.trim() || !socket || !chatId) return;
     stopTypingNow();
 
-    // Format message if replying
     let finalMessage = content.trim();
     if (replyTo) {
-      // Prepend or link reply context
-      finalMessage = `[Replying to ${replyTo.sender.name}: "${replyTo.content.slice(0, 40)}${replyTo.content.length > 40 ? "..." : ""}"]\n${finalMessage}`;
+      finalMessage = `[Replying to ${replyTo.sender.name}: "${replyTo.content.slice(0, 40)}"]\n${finalMessage}`;
     }
 
     socket.emit(EVENTS.NEW_MESSAGE, { chatId, message: finalMessage });
     onCancelReply?.();
   };
 
-  const handleSendVoice = async (audio: Blob) => {
+  const handleSendVoice = async (audio: Blob, duration: number, waveform: number[]) => {
+    if (!chatId) return;
     setUploading(true);
     stopTypingNow();
     try {
       const ext = audio.type.includes("ogg") ? "ogg" : "webm";
-      const file = new File([audio], `voice-note-${Date.now()}.${ext}`, {
+      const file = new File([audio], `voice_${Date.now()}.${ext}`, {
         type: audio.type || "audio/webm",
       });
       const formData = new FormData();
@@ -145,7 +148,7 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       await sendAttachments(formData);
       onCancelReply?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Upload failed");
+      toast.error(err?.response?.data?.message || "Voice note upload failed");
     } finally {
       setUploading(false);
     }
@@ -168,13 +171,11 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       const formData = new FormData();
       formData.append("chatId", chatId);
 
-      // If user typed caption alongside files
       if (hasText) {
         let finalCaption = text.trim();
         if (replyTo) {
           finalCaption = `[Replying to ${replyTo.sender.name}: "${replyTo.content.slice(0, 40)}"]\n${finalCaption}`;
         }
-        // If socket exists, we can also send caption text
         if (socket) {
           socket.emit(EVENTS.NEW_MESSAGE, { chatId, message: finalCaption });
         }
@@ -190,20 +191,21 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       setText("");
       onCancelReply?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Upload failed");
+      toast.error(err?.response?.data?.message || "Failed to send attachments");
     } finally {
       setUploading(false);
     }
   };
 
-  const handleEmojiClick = (emoji: string) => {
+  const addEmoji = (emoji: string) => {
     setText((prev) => prev + emoji);
     setShowEmojiPicker(false);
     inputRef.current?.focus();
   };
 
   return (
-    <div className="border-t border-border bg-card relative select-none">
+    <div className="relative border-t border-border/60 bg-card/85 backdrop-blur-xl select-none z-20">
+      {/* Hidden File Input */}
       <input
         ref={fileRef}
         type="file"
@@ -213,45 +215,49 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
         accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.txt"
       />
 
-      {/* Floating Emoji Picker Drawer */}
-      {showEmojiPicker && (
-        <div className="absolute bottom-full left-4 mb-2 p-3 bg-card border border-border rounded-2xl shadow-xl z-30 animate-fade-in w-72">
-          <div className="flex items-center justify-between pb-2 border-b border-border/60 mb-2">
-            <span className="text-xs font-semibold text-muted-foreground">Quick Reactions & Emojis</span>
-            <button
-              onClick={() => setShowEmojiPicker(false)}
-              className="p-1 text-muted-foreground hover:text-foreground rounded"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="grid grid-cols-8 gap-1">
-            {COMMON_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => handleEmojiClick(emoji)}
-                className="text-base p-1 hover:bg-muted rounded-lg transition-transform hover:scale-125 flex items-center justify-center cursor-pointer"
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Floating Emoji Picker Popover */}
+      <AnimatePresence>
+        {showEmojiPicker && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full left-4 mb-2 p-2.5 bg-card/95 border border-border/80 rounded-2xl shadow-xl backdrop-blur-xl z-30 max-w-[280px]"
+          >
+            <div className="grid grid-cols-6 gap-1">
+              {COMMON_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => addEmoji(emoji)}
+                  className="w-8 h-8 rounded-lg hover:bg-muted text-base flex items-center justify-center transition-transform hover:scale-125 cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Quoted Reply Banner */}
+      {/* Reply Banner */}
       {replyTo && (
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/70 border-b border-border text-xs animate-fade-in">
-          <div className="flex items-center gap-2 min-w-0">
-            <Reply className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-            <div className="min-w-0">
-              <span className="font-semibold text-foreground">Replying to {replyTo.sender.name}: </span>
-              <span className="text-muted-foreground truncate">{replyTo.content || "Attachment"}</span>
+        <div className="flex items-center justify-between px-4 py-2 bg-muted/70 dark:bg-zinc-900/80 border-b border-border/60">
+          <div className="flex items-center gap-2 overflow-hidden text-xs">
+            <Reply className="w-3.5 h-3.5 text-primary shrink-0" />
+            <div className="truncate">
+              <span className="font-semibold text-foreground mr-1">
+                Replying to {replyTo.sender.name}:
+              </span>
+              <span className="text-muted-foreground truncate">
+                {replyTo.content || "Attachment"}
+              </span>
             </div>
           </div>
           <button
             onClick={onCancelReply}
-            className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors cursor-pointer"
+            title="Cancel reply"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -286,54 +292,15 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
         </div>
       )}
 
-      {/* Main Input Row */}
-      {pendingFiles.length > 0 ? (
-        <div className="flex items-center gap-2 px-3 py-3 md:px-5 md:py-3.5">
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="shrink-0 rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 cursor-pointer"
-            title="Attach more files"
-          >
-            <Paperclip className="h-5 w-5" />
-          </button>
-
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void handleSendAttachments();
-              }
-            }}
-            placeholder={uploading ? "Uploading attachments…" : "Add a caption…"}
-            disabled={uploading}
-            className="flex-1 rounded-xl bg-muted/70 px-4 py-2 text-sm outline-none transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
-          />
-
-          <button
-            onClick={() => void handleSendAttachments()}
-            disabled={uploading}
-            className="shrink-0 rounded-xl gradient-primary p-2.5 text-white transition-opacity hover:opacity-90 disabled:opacity-40 shadow-xs btn-tactile cursor-pointer"
-            title="Send files"
-          >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5 px-3 py-2.5 md:px-5 md:py-3">
+      {/* Main Luxury Input Container */}
+      <div className="px-3 py-2.5 md:px-6 md:py-3">
+        <div className="flex items-center gap-1.5 bg-muted/50 dark:bg-zinc-900/60 border border-border/70 rounded-2xl p-1.5 transition-all focus-within:ring-2 focus-within:ring-primary/25 shadow-xs">
           {/* Attachment button */}
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="shrink-0 rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 cursor-pointer"
-            title="Attach images, videos, audio, or documents"
+            className="shrink-0 rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors disabled:opacity-40 cursor-pointer"
+            title="Attach files (photos, audio, video, docs)"
           >
             <Paperclip className="h-4 w-4" />
           </button>
@@ -342,57 +309,74 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             disabled={uploading}
-            className="shrink-0 rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 cursor-pointer"
-            title="Emojis"
+            className="shrink-0 rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors disabled:opacity-40 cursor-pointer"
+            title="Insert emoji"
           >
             <Smile className="h-4 w-4" />
           </button>
 
-          {/* Input or Voice Recorder */}
-          <div className="flex-1 flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={text}
-              onChange={(e) => handleTextChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (text.trim()) {
-                    handleSendText(text);
-                    setText("");
-                  }
-                }
-              }}
-              placeholder="Type a message..."
-              disabled={uploading}
-              className="flex-1 rounded-xl bg-muted/60 px-4 py-2 text-sm outline-none transition-shadow placeholder:text-muted-foreground/70 focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
-            />
-
-            {text.trim() ? (
-              <button
-                onClick={() => {
+          {/* Text Input */}
+          <input
+            ref={inputRef}
+            type="text"
+            value={text}
+            onChange={(e) => handleTextChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (pendingFiles.length > 0) {
+                  void handleSendAttachments();
+                } else if (text.trim()) {
                   handleSendText(text);
                   setText("");
-                }}
-                disabled={uploading}
-                className="shrink-0 rounded-xl gradient-primary p-2.5 text-white transition-opacity hover:opacity-90 disabled:opacity-40 shadow-xs btn-tactile cursor-pointer"
-                title="Send Message"
-              >
+                }
+              }
+            }}
+            placeholder={
+              uploading
+                ? "Uploading..."
+                : pendingFiles.length > 0
+                ? "Add a caption..."
+                : "Type a message..."
+            }
+            disabled={uploading}
+            className="flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground/70 text-foreground disabled:opacity-50"
+          />
+
+          {/* Action: Send button OR Voice Recorder */}
+          {pendingFiles.length > 0 || text.trim() ? (
+            <button
+              onClick={() => {
+                if (pendingFiles.length > 0) {
+                  void handleSendAttachments();
+                } else if (text.trim()) {
+                  handleSendText(text);
+                  setText("");
+                }
+              }}
+              disabled={uploading}
+              className={cn(
+                "shrink-0 rounded-xl p-2.5 text-white transition-all shadow-sm active:scale-95 disabled:opacity-40 cursor-pointer",
+                activeTheme.sendBtnClass
+              )}
+              title="Send"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
                 <Send className="h-4 w-4" />
-              </button>
-            ) : (
-              <VoiceRecorder
-                compact
-                disabled={uploading}
-                onText={(value) => handleSendText(value)}
-                onSend={(audio) => handleSendVoice(audio)}
-              />
-            )}
-          </div>
+              )}
+            </button>
+          ) : (
+            <VoiceRecorder
+              disabled={uploading}
+              onSend={(audio, duration, waveform) =>
+                handleSendVoice(audio, duration, waveform)
+              }
+            />
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
-

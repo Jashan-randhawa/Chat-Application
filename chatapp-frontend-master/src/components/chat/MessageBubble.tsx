@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatTime, fileFormat } from "@/lib/features";
-import type { Message } from "@/store/appStore";
+import { useAppStore, type Message } from "@/store/appStore";
+import { LUXURY_PALETTES } from "@/config/palette";
 import VoiceMessage from "./VoiceMessage";
 import { motion } from "framer-motion";
 import {
@@ -117,11 +118,25 @@ function VideoAttachment({ url }: { url: string }) {
   );
 }
 
-function AudioAttachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
+function AudioAttachment({
+  url,
+  isSelf,
+  time,
+  isRead,
+  isDelivered,
+}: {
+  url: string;
+  isSelf: boolean;
+  time: string;
+  isRead?: boolean;
+  isDelivered?: boolean;
+}) {
   if (isVoiceNote(url)) {
     return (
       <VoiceMessage
         audioUrl={url}
+        isRead={isRead}
+        isDelivered={isDelivered}
         msg={{
           from: isSelf ? "me" : "other",
           time,
@@ -182,12 +197,26 @@ function FileAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
   );
 }
 
-function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
+function Attachment({
+  url,
+  isSelf,
+  time,
+  isRead,
+  isDelivered,
+}: {
+  url: string;
+  isSelf: boolean;
+  time: string;
+  isRead?: boolean;
+  isDelivered?: boolean;
+}) {
   const fname = getFileName(url).toLowerCase();
   if (isVoiceNote(url) || fname.endsWith(".webm") || fname.endsWith(".ogg")) {
     return (
       <VoiceMessage
         audioUrl={url}
+        isRead={isRead}
+        isDelivered={isDelivered}
         msg={{
           from: isSelf ? "me" : "other",
           time,
@@ -200,7 +229,16 @@ function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time:
   const type = fileFormat(url);
   if (type === "image") return <ImageAttachment url={url} />;
   if (type === "video") return <VideoAttachment url={url} />;
-  if (type === "audio") return <AudioAttachment url={url} isSelf={isSelf} time={time} />;
+  if (type === "audio")
+    return (
+      <AudioAttachment
+        url={url}
+        isSelf={isSelf}
+        time={time}
+        isRead={isRead}
+        isDelivered={isDelivered}
+      />
+    );
   return <FileAttachment url={url} isSelf={isSelf} />;
 }
 
@@ -211,26 +249,31 @@ function MessageStatusIndicator({ message, isSelf }: { message: Message; isSelf:
 
   if (isRead) {
     return (
-      <span title="Read" className="inline-flex items-center text-primary ml-1">
-        <CheckCheck className="w-3.5 h-3.5" />
+      <span title="Read by recipient" className="inline-flex items-center text-cyan-200 dark:text-cyan-300 ml-1">
+        <CheckCheck className="w-3.5 h-3.5 drop-shadow-[0_0_4px_rgba(103,232,249,0.5)]" />
       </span>
     );
   }
   if (isDelivered) {
     return (
-      <span title="Delivered" className="inline-flex items-center text-muted-foreground/80 ml-1">
+      <span title="Delivered" className="inline-flex items-center text-white/80 ml-1">
         <CheckCheck className="w-3.5 h-3.5" />
       </span>
     );
   }
   return (
-    <span title="Sent" className="inline-flex items-center text-muted-foreground/60 ml-1">
+    <span title="Sent" className="inline-flex items-center text-white/60 ml-1">
       <Check className="w-3 h-3" />
     </span>
   );
 }
 
 export default function MessageBubble({ message, isSelf, showName, onReply }: Props) {
+  const { palette } = useAppStore();
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const isRead = !!(message.readBy && message.readBy.length > 0);
+  const isDelivered = !!(message.deliveredTo && message.deliveredTo.length > 0);
+
   const [reactions, setReactions] = useState<string[]>([]);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
@@ -329,14 +372,14 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
       {/* Main Bubble */}
       <div
         className={cn(
-          "max-w-[78%] md:max-w-[65%] relative",
+          "max-w-[82%] md:max-w-[68%] relative transition-all",
           hasAttachments && !message.content
             ? ""
             : cn(
-                "px-3.5 py-2",
+                "px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md",
                 isSelf
-                  ? "bg-chat-bubble-sent text-chat-bubble-sent-fg rounded-2xl rounded-br-xs shadow-xs"
-                  : "bg-chat-bubble-received text-chat-bubble-received-fg rounded-2xl rounded-bl-xs shadow-sm border border-border/40"
+                  ? cn(activeTheme.sentBubbleClass, "rounded-tr-xs")
+                  : "bg-card/90 dark:bg-zinc-900/90 text-card-foreground border border-border/80 rounded-tl-xs"
               )
         )}
       >
@@ -352,11 +395,11 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
           <div
             className={cn(
               "mb-2 p-2 rounded-xl text-xs border-l-2 bg-black/5 dark:bg-white/5",
-              isSelf ? "border-primary" : "border-muted-foreground"
+              isSelf ? "border-white/60 text-white/90" : "border-primary text-foreground"
             )}
           >
             <p className="font-semibold text-[11px] opacity-90">{message.replyTo.senderName}</p>
-            <p className="truncate opacity-70 text-[10px] mt-0.5">{message.replyTo.content}</p>
+            <p className="truncate opacity-75 text-[10px] mt-0.5">{message.replyTo.content}</p>
           </div>
         )}
 
@@ -369,6 +412,8 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
                 url={att.url}
                 isSelf={isSelf}
                 time={formatTime(message.createdAt)}
+                isRead={isRead}
+                isDelivered={isDelivered}
               />
             ))}
           </div>
@@ -376,7 +421,7 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
 
         {/* Message Text Content */}
         {message.content && (
-          <p className="text-sm leading-relaxed break-words whitespace-pre-wrap selection:bg-primary/20">
+          <p className="text-sm leading-relaxed break-words whitespace-pre-wrap selection:bg-primary/20 font-normal">
             {message.content}
           </p>
         )}
@@ -386,7 +431,7 @@ export default function MessageBubble({ message, isSelf, showName, onReply }: Pr
           <div
             className={cn(
               "flex items-center justify-end gap-1 mt-1 select-none",
-              isSelf ? "text-primary/70 dark:text-primary/80" : "text-muted-foreground"
+              isSelf ? "text-white/75" : "text-muted-foreground"
             )}
           >
             <span className="text-[10px]">{formatTime(message.createdAt)}</span>

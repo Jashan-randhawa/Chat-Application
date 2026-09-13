@@ -20,6 +20,9 @@ import { formatTime, fileFormat } from "@/lib/features";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import PaletteSwitcher from "@/components/PaletteSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LUXURY_PALETTES } from "@/config/palette";
 
 type PanelType = "chats" | "notifications" | "groups" | "friends" | "search" | "status" | null;
 
@@ -38,8 +41,9 @@ interface ChatPreview {
 export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshChats }: Props) {
   const {
     user, logout, notificationCount, resetNotificationCount,
-    newMessagesAlert, onlineUsers,
+    newMessagesAlert, onlineUsers, palette,
   } = useAppStore();
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
   const navigate = useNavigate();
 
   const [activePanel, setActivePanel] = useState<PanelType>("chats");
@@ -381,15 +385,15 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
             onClick={() => handlePanelChange(item.id)}
             title={item.label}
             className={cn(
-              "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
+              "relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer",
               activePanel === item.id
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? cn(activeTheme.activeNavClass, "shadow-md")
                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
           >
             {item.icon}
             {item.badge !== null && (
-              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1 shadow-xs">
                 {item.badge}
               </span>
             )}
@@ -399,11 +403,17 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
         {/* Spacer */}
         <div className="flex-1" />
 
+        {/* Theme and Palette tools */}
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <PaletteSwitcher compact align="left" />
+          <ThemeToggle />
+        </div>
+
         {/* Logout at bottom */}
         <button
           onClick={handleLogout}
           title="Logout"
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer"
         >
           <LogOut className="w-5 h-5" />
         </button>
