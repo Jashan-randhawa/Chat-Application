@@ -1,22 +1,75 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGetStats } from "@/services/api";
-import { Users, MessageSquare, MessagesSquare, Hash, TrendingUp, Loader2, RefreshCw } from "lucide-react";
-import { Line, Doughnut } from "react-chartjs-2";
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, ArcElement, Tooltip, Legend, Filler,
+  Users,
+  MessageSquare,
+  MessagesSquare,
+  Hash,
+  TrendingUp,
+  Loader2,
+  RefreshCw,
+  Radio,
+  UserCheck,
+  Camera,
+  Paperclip,
+  Activity,
+  Cpu,
+  Clock,
+  Zap,
+} from "lucide-react";
+import { Line, Doughnut, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
 } from "chart.js";
 import { motion } from "framer-motion";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend, Filler);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface Stats {
   groupsCount: number;
   usersCount: number;
   messagesCount: number;
   totalChatsCount: number;
+  directChatsCount: number;
+  onlineUsersCount: number;
+  totalRequestsCount: number;
+  pendingRequestsCount: number;
+  activeStatusesCount: number;
+  messagesWithMediaCount: number;
   messagesChart: number[];
+  usersChart: number[];
+  serverUptime: number;
+  nodeVersion: string;
+  memoryUsage: number;
+}
+
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / (3600 * 24));
+  const h = Math.floor((seconds % (3600 * 24)) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${seconds % 60}s`;
 }
 
 const statCards = (s: Stats) => [
@@ -27,7 +80,8 @@ const statCards = (s: Stats) => [
     color: "from-sky-500/20 to-sky-500/5",
     iconColor: "text-sky-400",
     border: "border-sky-500/20",
-    badge: "+12% this week",
+    badge: `${s.onlineUsersCount} online now`,
+    subtext: "Registered accounts",
   },
   {
     label: "Total Chats",
@@ -37,6 +91,7 @@ const statCards = (s: Stats) => [
     iconColor: "text-violet-400",
     border: "border-violet-500/20",
     badge: `${s.groupsCount} groups`,
+    subtext: `${s.directChatsCount} 1-on-1 chats`,
   },
   {
     label: "Total Messages",
@@ -45,16 +100,18 @@ const statCards = (s: Stats) => [
     color: "from-amber-500/20 to-amber-500/5",
     iconColor: "text-amber-400",
     border: "border-amber-500/20",
-    badge: "All time",
+    badge: `${s.messagesWithMediaCount} media`,
+    subtext: "Encrypted & logged",
   },
   {
-    label: "Group Chats",
-    value: s.groupsCount,
-    icon: Hash,
+    label: "Active Stories",
+    value: s.activeStatusesCount,
+    icon: Camera,
     color: "from-emerald-500/20 to-emerald-500/5",
     iconColor: "text-emerald-400",
     border: "border-emerald-500/20",
-    badge: `${s.totalChatsCount - s.groupsCount} direct`,
+    badge: "24h window",
+    subtext: `${s.pendingRequestsCount} pending requests`,
   },
 ];
 
@@ -208,8 +265,8 @@ export default function Dashboard() {
           </div>
           <div className="flex justify-center gap-4 mt-3">
             {[
-              { label: "Direct", color: "bg-sky-400", value: (stats?.totalChatsCount || 0) - (stats?.groupsCount || 0) },
-              { label: "Groups", color: "bg-violet-400", value: stats?.groupsCount || 0 },
+              { label: "Direct", color: "bg-sky-400", value: stats?.directChatsCount ?? 0 },
+              { label: "Groups", color: "bg-violet-400", value: stats?.groupsCount ?? 0 },
             ].map((l) => (
               <div key={l.label} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${l.color}`} />
@@ -217,6 +274,132 @@ export default function Dashboard() {
                 <span className="text-xs text-white/70 font-medium">{l.value}</span>
               </div>
             ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Second Row: User Growth & System Health Telemetry */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        {/* User registrations bar chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-2 bg-[#161b22] border border-white/5 rounded-xl p-5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-sm text-white">New User Registrations (7 Days)</h3>
+              <p className="text-xs text-white/30 mt-0.5 flex items-center gap-1">
+                <UserCheck className="w-3 h-3 text-sky-400" />
+                {(stats?.usersChart || []).reduce((a, b) => a + b, 0)} new registrations this week
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-white/30">
+              <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" />
+              Signups
+            </div>
+          </div>
+          <Bar
+            data={{
+              labels,
+              datasets: [
+                {
+                  label: "New Users",
+                  data: stats?.usersChart || [0, 0, 0, 0, 0, 0, 0],
+                  backgroundColor: "rgba(56, 189, 248, 0.6)",
+                  hoverBackgroundColor: "rgba(56, 189, 248, 0.9)",
+                  borderRadius: 6,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: "#1f2937", titleColor: "#fff", bodyColor: "#9ca3af" },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                  ticks: { color: "rgba(255,255,255,0.3)", font: { size: 11 } },
+                },
+                x: {
+                  grid: { display: false },
+                  ticks: { color: "rgba(255,255,255,0.3)", font: { size: 11 } },
+                },
+              },
+            }}
+          />
+        </motion.div>
+
+        {/* System & Application Health Telemetry */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="bg-[#161b22] border border-white/5 rounded-xl p-5 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-sm text-white">System Telemetry</h3>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+              </span>
+            </div>
+
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-white/50 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-white/40" /> Server Uptime
+                </span>
+                <span className="text-xs font-semibold text-white font-mono">
+                  {formatUptime(stats?.serverUptime || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-white/50 flex items-center gap-2">
+                  <Cpu className="w-3.5 h-3.5 text-white/40" /> Memory Heap
+                </span>
+                <span className="text-xs font-semibold text-white font-mono">
+                  {stats?.memoryUsage || 0} MB
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-white/50 flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-white/40" /> Node.js Runtime
+                </span>
+                <span className="text-xs font-semibold text-white font-mono">
+                  {stats?.nodeVersion || "v22.x"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 border-b border-white/5">
+                <span className="text-xs text-white/50 flex items-center gap-2">
+                  <Radio className="w-3.5 h-3.5 text-white/40" /> Realtime Sockets
+                </span>
+                <span className="text-xs font-semibold text-emerald-400 font-mono">
+                  {stats?.onlineUsersCount || 0} Connected
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-xs text-white/50 flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-white/40" /> Pending Requests
+                </span>
+                <span className="text-xs font-semibold text-amber-400 font-mono">
+                  {stats?.pendingRequestsCount || 0} In Queue
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-white/30">
+            <span>Database: MongoDB Connected</span>
+            <span>Security: JWT HS256</span>
           </div>
         </motion.div>
       </div>

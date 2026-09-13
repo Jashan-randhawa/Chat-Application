@@ -28,6 +28,7 @@ export default function MessageManagement() {
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     adminGetMessages()
@@ -36,10 +37,28 @@ export default function MessageManagement() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleDeleteMessage = async (msg: AdminMessage) => {
+    if (!confirm("Are you sure you want to delete this message and its associated attachments permanently?")) {
+      return;
+    }
+    setDeletingId(msg._id);
+    try {
+      await adminDeleteMessage(msg._id);
+      toast.success("Message deleted successfully");
+      setMessages((prev) => prev.filter((m) => m._id !== msg._id));
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to delete message");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const filtered = messages.filter(
     (m) =>
       m.sender.name.toLowerCase().includes(query.toLowerCase()) ||
-      m.content.toLowerCase().includes(query.toLowerCase())
+      (m.sender.username && m.sender.username.toLowerCase().includes(query.toLowerCase())) ||
+      m.content.toLowerCase().includes(query.toLowerCase()) ||
+      (m.chatName && m.chatName.toLowerCase().includes(query.toLowerCase()))
   );
 
   if (loading) {
@@ -56,26 +75,27 @@ export default function MessageManagement() {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">Messages</h1>
-          <p className="text-xs text-white/40 mt-0.5">{messages.length} total messages</p>
+          <h1 className="text-xl font-bold text-white">Messages Log</h1>
+          <p className="text-xs text-white/40 mt-0.5">{messages.length} total messages recorded</p>
         </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search messages..."
+            placeholder="Search by text, sender, or chat..."
             className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl pl-9 pr-4 py-2 outline-none focus:ring-2 focus:ring-amber-500/30 placeholder:text-white/25 transition-all"
           />
         </div>
       </div>
 
-      <div className="bg-[#161b22] border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-[#161b22] border border-white/5 rounded-xl overflow-hidden shadow-xl">
         <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/5 text-[11px] font-semibold text-white/25 uppercase tracking-wider">
           <span className="col-span-3">Sender</span>
-          <span className="col-span-5">Content</span>
-          <span className="col-span-2 text-center">Attachments</span>
+          <span className="col-span-5">Content / Context</span>
+          <span className="col-span-1 text-center">Attachments</span>
           <span className="col-span-2">Time</span>
+          <span className="col-span-1 text-right">Actions</span>
         </div>
 
         {filtered.length === 0 ? (
@@ -109,19 +129,24 @@ export default function MessageManagement() {
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="col-span-5">
+              {/* Content and Chat name */}
+              <div className="col-span-5 min-w-0">
                 {m.content ? (
-                  <p className="text-sm text-white/50 truncate">
+                  <p className="text-sm text-white/70 truncate">
                     {parseReplyMessage(m.content).cleanContent || m.content}
                   </p>
                 ) : (
-                  <span className="text-xs text-white/20 italic">Media only</span>
+                  <span className="text-xs text-white/25 italic">Media only</span>
+                )}
+                {m.chatName && (
+                  <p className="text-[10px] text-white/35 truncate mt-0.5">
+                    {m.groupChat ? "Group: " : "Direct: "}{m.chatName}
+                  </p>
                 )}
               </div>
 
               {/* Attachments */}
-              <div className="col-span-2 flex items-center justify-center gap-1">
+              <div className="col-span-1 flex items-center justify-center gap-1">
                 {m.attachments?.length > 0 ? (
                   <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-0.5 rounded-full">
                     <AttachmentIcon url={m.attachments[0].url} />
@@ -134,7 +159,23 @@ export default function MessageManagement() {
 
               {/* Time */}
               <div className="col-span-2">
-                <span className="text-xs text-white/30">{formatDate(m.createdAt)}</span>
+                <span className="text-xs text-white/40 font-mono">{formatDate(m.createdAt)}</span>
+              </div>
+
+              {/* Action delete */}
+              <div className="col-span-1 flex items-center justify-end">
+                <button
+                  onClick={() => handleDeleteMessage(m)}
+                  disabled={deletingId === m._id}
+                  className="p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-40"
+                  title="Delete message"
+                >
+                  {deletingId === m._id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
               </div>
             </motion.div>
           ))

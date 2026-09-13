@@ -14,7 +14,7 @@ import { useWebRTC } from "@/hooks/useWebRTC";
 import {
   Search, Bell, LogOut, Plus, X, Check, UserPlus, Users,
   Loader2, MessageCircle, UsersRound, UserCheck, Settings, CircleDot, Phone,
-  Clock, ExternalLink, Sparkles
+  Clock, ExternalLink, Sparkles, Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatTime, fileFormat } from "@/lib/features";
@@ -468,6 +468,15 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
           <PaletteSwitcher compact align="left" />
           <ThemeToggle />
         </div>
+
+        {/* Admin Quick Link */}
+        <button
+          onClick={() => navigate("/admin")}
+          title="Admin Control Center"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-400 transition-all duration-200 cursor-pointer"
+        >
+          <Shield className="w-5 h-5" />
+        </button>
 
         {/* Logout at bottom */}
         <button

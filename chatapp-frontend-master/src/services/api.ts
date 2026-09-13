@@ -113,6 +113,10 @@ export const adminGetMessages = () => api.get("/admin/messages");
 
 export const adminGetStats = () => api.get("/admin/stats");
 
+export const adminDeleteUser = (id: string) => api.delete(`/admin/users/${id}`);
+
+export const adminDeleteMessage = (id: string) => api.delete(`/admin/messages/${id}`);
+
 // ── Status ──
 export const getFriendsStatuses = () => api.get("/status");
 

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGetChats } from "@/services/api";
-import { Loader2, Search, MessagesSquare, Users, MessageCircle } from "lucide-react";
+import { formatDate } from "@/lib/features";
+import { Loader2, Search, MessagesSquare, Users, MessageCircle, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface AdminChat {
@@ -11,8 +12,10 @@ interface AdminChat {
   groupChat: boolean;
   totalMembers: number;
   totalMessages: number;
-  members: { _id: string; avatar: string }[];
-  creator?: { name: string; avatar: string };
+  members: { _id: string; name: string; username?: string; avatar: string }[];
+  creator?: { name: string; username?: string; avatar: string };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export default function ChatManagement() {
@@ -129,7 +132,13 @@ export default function ChatManagement() {
                 <span className="text-sm text-white/60">{c.totalMessages}</span>
               </div>
               <div className="col-span-2">
-                <span className="text-sm text-white/40 truncate block">{c.creator?.name || "—"}</span>
+                <span className="text-sm text-white/80 font-medium truncate block">{c.creator?.name || "—"}</span>
+                {c.creator?.username && (
+                  <span className="text-[10px] text-white/30 truncate block">@{c.creator.username}</span>
+                )}
+                {c.createdAt && (
+                  <span className="text-[10px] text-white/20 truncate block mt-0.5">{formatDate(c.createdAt)}</span>
+                )}
               </div>
             </motion.div>
           ))

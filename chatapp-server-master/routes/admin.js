@@ -7,6 +7,8 @@ import {
   allUsers,
   getAdminData,
   getDashboardStats,
+  deleteUserByAdmin,
+  deleteMessageByAdmin,
 } from "../controllers/admin.js";
 import { adminLoginValidator, validateHandler } from "../lib/validators.js";
 import { adminOnly } from "../middlewares/auth.js";
@@ -17,15 +19,19 @@ app.post("/verify", adminLoginValidator(), validateHandler, adminLogin);
 
 app.get("/logout", adminLogout);
 
-// Only Admin Can Accecss these Routes
+// Only Admin Can Access these Routes
 
 app.use(adminOnly);
 
 app.get("/", getAdminData);
 
 app.get("/users", allUsers);
+app.delete("/users/:id", deleteUserByAdmin);
+
 app.get("/chats", allChats);
+
 app.get("/messages", allMessages);
+app.delete("/messages/:id", deleteMessageByAdmin);
 
 app.get("/stats", getDashboardStats);
 
