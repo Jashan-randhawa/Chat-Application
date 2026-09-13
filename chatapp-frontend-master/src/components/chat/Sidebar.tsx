@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatTime, fileFormat } from "@/lib/features";
+import { parseReplyMessage } from "@/lib/replyUtils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -186,21 +187,44 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const createPreviewText = useCallback((msg: any) => {
+    const raw = msg?.content || "";
+    const { cleanContent } = parseReplyMessage(raw);
+    if (cleanContent.trim()) return cleanContent.trim();
+    const firstAttachment = msg?.attachments?.[0]?.url || "";
+    if (!firstAttachment) return "No messages yet";
+    const type = fileFormat(firstAttachment);
+    if (type === "image") return "📷 Photo";
+    if (type === "video") return "🎥 Video";
+    if (type === "audio") return "🎵 Audio";
+    const ext = firstAttachment.split(".").pop()?.toLowerCase();
+    if (ext === "webm" || ext === "ogg") return "🎤 Voice message";
+    return "📎 Attachment";
+  }, []);
+
+  // Real-time chat preview and timestamp updates on incoming messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = ({ chatId, message }: { chatId: string; message: any }) => {
+      if (!chatId || !message) return;
+      setChatPreviews((prev) => ({
+        ...prev,
+        [chatId]: {
+          text: createPreviewText(message),
+          time: formatTime(message.createdAt || new Date().toISOString()),
+        },
+      }));
+    };
+
+    socket.on(EVENTS.NEW_MESSAGE, handleNewMessage);
+    return () => {
+      socket.off(EVENTS.NEW_MESSAGE, handleNewMessage);
+    };
+  }, [socket, createPreviewText]);
+
   useEffect(() => {
     let cancelled = false;
-
-    const createPreviewText = (msg: any) => {
-      if (msg?.content?.trim()) return msg.content.trim();
-      const firstAttachment = msg?.attachments?.[0]?.url || "";
-      if (!firstAttachment) return "No messages yet";
-      const type = fileFormat(firstAttachment);
-      if (type === "image") return "📷 Photo";
-      if (type === "video") return "🎥 Video";
-      if (type === "audio") return "🎵 Audio";
-      const ext = firstAttachment.split(".").pop()?.toLowerCase();
-      if (ext === "webm" || ext === "ogg") return "🎤 Voice message";
-      return "📎 Attachment";
-    };
 
     const loadPreviews = async () => {
       const entries = await Promise.all(
@@ -233,7 +257,7 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
     return () => {
       cancelled = true;
     };
-  }, [chats]);
+  }, [chats, createPreviewText]);
 
   // Search users
   const handleUserSearch = (query: string) => {
@@ -712,11 +736,21 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
                           </button>
                           <button
                             onClick={() => {
-                              // Find direct chat with this friend
+                              const friendIdStr = f._id?.toString();
                               const chat = chats.find(
-                                (c) => !c.groupChat && c.members.includes(f._id)
+                                (c) =>
+                                  !c.groupChat &&
+                                  c.members.some(
+                                    (m: any) => (m?._id || m)?.toString() === friendIdStr
+                                  )
                               );
-                              if (chat) { onSelectChat(chat._id); setActivePanel("chats"); }
+                              if (chat) {
+                                onSelectChat(chat._id);
+                                setActivePanel("chats");
+                              } else {
+                                onRefreshChats();
+                                setActivePanel("chats");
+                              }
                             }}
                             className="w-8 h-8 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors"
                             title="Message"

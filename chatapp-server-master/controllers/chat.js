@@ -39,28 +39,43 @@ const newGroupChat = TryCatch(async (req, res, next) => {
 });
 
 const getMyChats = TryCatch(async (req, res, next) => {
-  const chats = await Chat.find({ members: req.user, groupChat: false }).populate(
+  const chats = await Chat.find({ members: req.user }).populate(
     "members",
     "name avatar"
   );
 
-  const transformedChats = chats.map(({ _id, members, groupChat }) => {
+  const transformedChats = chats.map(({ _id, name, members, groupChat, creator }) => {
     const safeMembers = Array.isArray(members) ? members : [];
-    const otherMember = getOtherMember(safeMembers, req.user);
-    if (!otherMember) return null;
 
-    return {
-      _id,
-      groupChat,
-      avatar: [otherMember?.avatar?.url].filter(Boolean),
-      name: otherMember.name,
-      members: safeMembers.reduce((prev, curr) => {
-        if (curr._id.toString() !== req.user.toString()) {
-          prev.push(curr._id);
-        }
-        return prev;
-      }, []),
-    };
+    if (groupChat) {
+      return {
+        _id,
+        groupChat: true,
+        name: name || "Unnamed Group",
+        avatar: safeMembers
+          .slice(0, 3)
+          .map((m) => m.avatar?.url)
+          .filter(Boolean),
+        members: safeMembers.map((m) => m._id),
+        creator,
+      };
+    } else {
+      const otherMember = getOtherMember(safeMembers, req.user);
+      if (!otherMember) return null;
+
+      return {
+        _id,
+        groupChat: false,
+        avatar: [otherMember?.avatar?.url].filter(Boolean),
+        name: otherMember.name,
+        members: safeMembers.reduce((prev, curr) => {
+          if (curr._id.toString() !== req.user.toString()) {
+            prev.push(curr._id);
+          }
+          return prev;
+        }, []),
+      };
+    }
   }).filter(Boolean);
 
   return res.status(200).json({

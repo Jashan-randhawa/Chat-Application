@@ -20,6 +20,9 @@ import {
   Sparkles,
   Camera,
   Mic,
+  ShieldCheck,
+  UsersRound,
+  PhoneCall,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
@@ -486,18 +489,62 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
   // Empty state when no chat selected
   if (!chatId || !chat) {
     return (
-      <div className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-[#0b0f17] transition-colors">
-        <div className="flex flex-col items-center gap-4 animate-fade-in relative z-10 text-center max-w-sm px-4">
-          <div className="w-20 h-20 rounded-3xl bg-card border border-border/80 flex items-center justify-center shadow-xl">
-            <MessageSquare className="w-9 h-9 text-primary animate-pulse" />
+      <div className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-[#0b0f17] transition-colors p-6">
+        <div className="flex flex-col items-center gap-6 animate-fade-in relative z-10 text-center max-w-md">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-3xl bg-card border border-border/80 flex items-center justify-center shadow-xl">
+              <MessageSquare className="w-9 h-9 text-primary" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px] shadow-sm">
+              <ShieldCheck className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-display tracking-tight text-foreground">
+          <div className="space-y-1.5">
+            <h2 className="text-2xl font-bold font-display tracking-tight text-foreground">
               Antigravity Chat
             </h2>
-            <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-              Select a conversation from the sidebar to start encrypted messaging, sharing media, and making voice calls.
+            <p className="text-muted-foreground text-xs leading-relaxed max-w-sm">
+              Select a conversation from the sidebar or start a new direct or group chat to begin messaging.
             </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 w-full pt-2">
+            <div className="p-3 rounded-2xl bg-card/80 border border-border/60 text-left flex items-start gap-2.5 shadow-2xs">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Encrypted</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Private, secure chats</p>
+              </div>
+            </div>
+            <div className="p-3 rounded-2xl bg-card/80 border border-border/60 text-left flex items-start gap-2.5 shadow-2xs">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                <PhoneCall className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Voice Calls</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Peer-to-peer audio</p>
+              </div>
+            </div>
+            <div className="p-3 rounded-2xl bg-card/80 border border-border/60 text-left flex items-start gap-2.5 shadow-2xs">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Rich Media</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Photos, voice notes</p>
+              </div>
+            </div>
+            <div className="p-3 rounded-2xl bg-card/80 border border-border/60 text-left flex items-start gap-2.5 shadow-2xs">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 mt-0.5">
+                <UsersRound className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Group Chats</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Team conversations</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

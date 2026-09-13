@@ -36,22 +36,38 @@ export default function Index() {
     const handleNewMessageAlert = ({ chatId }: { chatId: string }) => {
       if (chatId !== selectedChat) setNewMessagesAlert(chatId);
     };
+    const handleNewMessage = ({ chatId }: { chatId: string }) => {
+      if (!chatId) return;
+      setChats((prev) => {
+        const index = prev.findIndex((c) => c._id === chatId);
+        if (index === -1) {
+          fetchChats();
+          return prev;
+        }
+        if (index === 0) return prev;
+        const updated = [...prev];
+        const [moved] = updated.splice(index, 1);
+        return [moved, ...updated];
+      });
+    };
     const handleNewRequest = () => incrementNotification();
     const handleRefetchChats = () => fetchChats();
     const handleOnlineUsers = (users: string[]) => setOnlineUsers(users);
 
     socket.on(EVENTS.NEW_MESSAGE_ALERT, handleNewMessageAlert);
+    socket.on(EVENTS.NEW_MESSAGE, handleNewMessage);
     socket.on(EVENTS.NEW_REQUEST, handleNewRequest);
     socket.on(EVENTS.REFETCH_CHATS, handleRefetchChats);
     socket.on(EVENTS.ONLINE_USERS, handleOnlineUsers);
 
     return () => {
       socket.off(EVENTS.NEW_MESSAGE_ALERT, handleNewMessageAlert);
+      socket.off(EVENTS.NEW_MESSAGE, handleNewMessage);
       socket.off(EVENTS.NEW_REQUEST, handleNewRequest);
       socket.off(EVENTS.REFETCH_CHATS, handleRefetchChats);
       socket.off(EVENTS.ONLINE_USERS, handleOnlineUsers);
     };
-  }, [socket, selectedChat]);
+  }, [socket, selectedChat, fetchChats]);
 
   if (chatsLoading) {
     return (
