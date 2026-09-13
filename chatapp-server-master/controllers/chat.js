@@ -22,7 +22,7 @@ const newGroupChat = TryCatch(async (req, res, next) => {
 
   const allMembers = [...members, req.user];
 
-  await Chat.create({
+  const newChat = await Chat.create({
     name,
     groupChat: true,
     creator: req.user,
@@ -35,6 +35,7 @@ const newGroupChat = TryCatch(async (req, res, next) => {
   return res.status(201).json({
     success: true,
     message: "Group Created",
+    chatId: newChat._id,
   });
 });
 
@@ -273,6 +274,8 @@ const sendAttachments = TryCatch(async (req, res, next) => {
     sender: {
       _id: me._id,
       name: me.name,
+      username: me.username,
+      avatar: me.avatar?.url,
     },
   };
 
@@ -294,15 +297,16 @@ const sendAttachments = TryCatch(async (req, res, next) => {
 const getChatDetails = TryCatch(async (req, res, next) => {
   if (req.query.populate === "true") {
     const chat = await Chat.findById(req.params.id)
-      .populate("members", "name avatar")
+      .populate("members", "name username avatar")
       .lean();
 
     if (!chat) return next(new ErrorHandler("Chat not found", 404));
 
-    chat.members = chat.members.map(({ _id, name, avatar }) => ({
+    chat.members = chat.members.map(({ _id, name, username, avatar }) => ({
       _id,
       name,
-      avatar: avatar.url,
+      username: username || "",
+      avatar: avatar?.url,
     }));
 
     return res.status(200).json({
@@ -422,7 +426,7 @@ const getMessages = TryCatch(async (req, res, next) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(resultPerPage)
-      .populate("sender", "name")
+      .populate("sender", "name username avatar")
       .lean(),
     Message.countDocuments({ chat: chatId }),
   ]);

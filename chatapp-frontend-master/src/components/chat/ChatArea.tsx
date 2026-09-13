@@ -38,6 +38,7 @@ interface Props {
 interface CallParty {
   _id: string;
   name: string;
+  avatar?: string;
 }
 
 function getMessageTimestamp(message: Message): number {
@@ -379,7 +380,7 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
       const offer = await createOffer();
       if (!offer) return;
       callPeerIdRef.current = peerId;
-      setCallRemoteUser({ _id: peerId, name: chat?.name ?? "Unknown" });
+      setCallRemoteUser({ _id: peerId, name: chat?.name ?? "Unknown", avatar: chat?.avatar?.[0] });
       setCallStatus("outgoing");
       socket.emit(EVENTS.CALL_OFFER, { chatId, offer, toUserId: peerId });
     } catch {

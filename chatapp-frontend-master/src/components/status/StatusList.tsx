@@ -22,7 +22,7 @@ interface Slide {
 
 interface StatusEntry {
   _id: string;
-  user: { _id: string; name: string; avatar?: string };
+  user: { _id: string; name: string; username?: string; avatar?: string };
   slides: Slide[];
   isOwn: boolean;
 }
@@ -156,7 +156,12 @@ export default function StatusList({ fullPage = false }: { fullPage?: boolean })
 
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{s.user.name}</p>
+                      <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                        <span>{s.user.name}</span>
+                        {s.user.username && (
+                          <span className="text-[11px] text-muted-foreground font-normal">@{s.user.username}</span>
+                        )}
+                      </p>
                       <p className={`text-xs ${unseen ? "text-primary font-medium" : "text-muted-foreground"}`}>
                         {unseen ? "New update" : "Viewed"} · {s.slides.length} slide{s.slides.length !== 1 ? "s" : ""}
                       </p>

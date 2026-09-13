@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Mic, MicOff } from "lucide-react";
+import ChatAvatar from "./Avatar";
 
 export type CallStatus = "outgoing" | "incoming" | "active";
 
 interface CallParty {
   _id: string;
   name: string;
+  avatar?: string;
 }
 
 interface Props {
@@ -76,8 +78,11 @@ export default function CallModal({
 
       <div className="bg-card rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-6 w-80 max-w-full mx-4">
         {/* Avatar */}
-        <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-3xl font-bold text-primary ring-4 ring-primary/30">
-          {initials}
+        <div className="relative">
+          <ChatAvatar name={remoteUser.name} src={remoteUser.avatar} size="lg" />
+          {status === "active" && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-card ring-2 ring-emerald-500/20 animate-pulse" />
+          )}
         </div>
 
         {/* Name & status */}

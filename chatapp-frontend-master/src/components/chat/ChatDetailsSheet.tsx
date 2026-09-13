@@ -56,6 +56,7 @@ interface Props {
 interface ChatMember {
   _id: string;
   name: string;
+  username?: string;
   avatar?: string;
 }
 
@@ -344,6 +345,11 @@ export default function ChatDetailsSheet({
                                     </span>
                                   )}
                                 </p>
+                                {member.username && (
+                                  <p className="text-[10px] text-muted-foreground truncate">
+                                    @{member.username}
+                                  </p>
+                                )}
                               </div>
                             </div>
 

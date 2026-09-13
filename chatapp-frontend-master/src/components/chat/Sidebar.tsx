@@ -111,7 +111,7 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
   const [friendsLoading, setFriendsLoading] = useState(false);
 
   // ── Friend call state ──────────────────────────────────────────────────────
-  interface CallParty { _id: string; name: string; }
+  interface CallParty { _id: string; name: string; avatar?: string; }
   const [callStatus, setCallStatus] = useState<CallStatus | null>(null);
   const [callRemoteUser, setCallRemoteUser] = useState<CallParty | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
@@ -145,7 +145,7 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
       const offer = await createOffer();
       if (!offer) return;
       callPeerIdRef.current = friend._id;
-      setCallRemoteUser({ _id: friend._id, name: friend.name });
+      setCallRemoteUser({ _id: friend._id, name: friend.name, avatar: (friend as any).avatar?.url || (friend as any).avatar });
       setCallStatus("outgoing");
       socket.emit(EVENTS.CALL_OFFER, { chatId: chat._id, offer, toUserId: friend._id });
     } catch { cleanupWebRTC(); setCallStatus(null); }

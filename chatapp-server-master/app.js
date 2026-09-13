@@ -162,6 +162,8 @@ io.on("connection", (socket) => {
         sender: {
           _id: user._id,
           name: user.name,
+          username: user.username,
+          avatar: user.avatar?.url,
         },
         chat: chatId,
         createdAt: messageForDB.createdAt,
