@@ -80,25 +80,58 @@ const logout = TryCatch(async (req, res) => {
 const searchUser = TryCatch(async (req, res) => {
   const { name = "" } = req.query;
 
-  // Finding All my chats
+  // Finding all my direct chats (friends)
   const myChats = await Chat.find({ groupChat: false, members: req.user });
+  const friendIds = myChats.flatMap((chat) =>
+    chat.members.map((m) => m.toString()).filter((id) => id !== req.user.toString())
+  );
 
-  //  extracting All Users from my chats means friends or people I have chatted with
-  const allUsersFromMyChats = myChats.flatMap((chat) => chat.members);
-  const excludedUsers = [...allUsersFromMyChats, req.user];
+  // Finding all users matching name or username (excluding self)
+  const allUsers = await User.find({
+    _id: { $ne: req.user },
+    $or: [
+      { name: { $regex: name, $options: "i" } },
+      { username: { $regex: name, $options: "i" } },
+    ],
+  }).select("name username avatar");
 
-  // Finding all users except me and my friends
-  const allUsersExceptMeAndFriends = await User.find({
-    _id: { $nin: excludedUsers },
-    name: { $regex: name, $options: "i" },
+  // Fetch pending requests involving current user and these candidates
+  const userIds = allUsers.map((u) => u._id);
+  const pendingRequests = await Request.find({
+    $or: [
+      { sender: req.user, receiver: { $in: userIds } },
+      { sender: { $in: userIds }, receiver: req.user },
+    ],
   });
 
-  // Modifying the response
-  const users = allUsersExceptMeAndFriends.map(({ _id, name, avatar }) => ({
-    _id,
-    name,
-    avatar: avatar.url,
-  }));
+  const requestMap = new Map();
+  for (const r of pendingRequests) {
+    if (r.sender.toString() === req.user.toString()) {
+      requestMap.set(r.receiver.toString(), { status: "sent", requestId: r._id });
+    } else {
+      requestMap.set(r.sender.toString(), { status: "received", requestId: r._id });
+    }
+  }
+
+  const users = allUsers.map((u) => {
+    const uIdStr = u._id.toString();
+    const isFriend = friendIds.includes(uIdStr);
+    const reqInfo = requestMap.get(uIdStr);
+
+    let relationshipStatus = "none";
+    if (isFriend) relationshipStatus = "friends";
+    else if (reqInfo?.status === "sent") relationshipStatus = "sent";
+    else if (reqInfo?.status === "received") relationshipStatus = "received";
+
+    return {
+      _id: u._id,
+      name: u.name,
+      username: u.username || "",
+      avatar: u.avatar?.url || "",
+      relationshipStatus,
+      requestId: reqInfo?.requestId || null,
+    };
+  });
 
   return res.status(200).json({
     success: true,
@@ -108,6 +141,18 @@ const searchUser = TryCatch(async (req, res) => {
 
 const sendFriendRequest = TryCatch(async (req, res, next) => {
   const { userId } = req.body;
+
+  if (userId.toString() === req.user.toString()) {
+    return next(new ErrorHandler("Cannot send request to yourself", 400));
+  }
+
+  const isAlreadyFriend = await Chat.findOne({
+    groupChat: false,
+    members: { $all: [req.user, userId] },
+  });
+  if (isAlreadyFriend) {
+    return next(new ErrorHandler("You are already friends", 400));
+  }
 
   const request = await Request.findOne({
     $or: [
@@ -174,18 +219,19 @@ const acceptFriendRequest = TryCatch(async (req, res, next) => {
 });
 
 const getMyNotifications = TryCatch(async (req, res) => {
-  const requests = await Request.find({ receiver: req.user }).populate(
-    "sender",
-    "name avatar"
-  );
+  const requests = await Request.find({ receiver: req.user })
+    .populate("sender", "name username avatar")
+    .sort({ createdAt: -1 });
 
-  const allRequests = requests.map(({ _id, sender }) => ({
+  const allRequests = requests.map(({ _id, sender, createdAt }) => ({
     _id,
     sender: {
       _id: sender._id,
       name: sender.name,
-      avatar: sender.avatar.url,
+      username: sender.username || "",
+      avatar: sender.avatar?.url || "",
     },
+    createdAt,
   }));
 
   return res.status(200).json({
@@ -200,7 +246,7 @@ const getMyFriends = TryCatch(async (req, res, next) => {
   const chats = await Chat.find({
     members: req.user,
     groupChat: false,
-  }).populate("members", "name avatar");
+  }).populate("members", "name username avatar");
 
   const friends = chats.map(({ members }) => {
     const otherUser = getOtherMember(members, req.user);
@@ -209,7 +255,8 @@ const getMyFriends = TryCatch(async (req, res, next) => {
     return {
       _id: otherUser._id,
       name: otherUser.name,
-      avatar: otherUser.avatar.url,
+      username: otherUser.username || "",
+      avatar: otherUser.avatar?.url || "",
     };
   }).filter(Boolean);
 

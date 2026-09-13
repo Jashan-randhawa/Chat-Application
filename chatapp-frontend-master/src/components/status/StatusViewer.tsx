@@ -3,7 +3,13 @@ import { X, ChevronLeft, ChevronRight, Trash2, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { markStatusViewed, deleteStatusSlide } from "@/services/api";
 import { useAppStore } from "@/store/appStore";
+import ChatAvatar from "../chat/Avatar";
 import { toast } from "sonner";
+
+interface ViewerItem {
+  user: { _id?: string; name?: string; username?: string; avatar?: string } | string;
+  viewedAt: string;
+}
 
 interface Slide {
   _id: string;
@@ -14,7 +20,7 @@ interface Slide {
   createdAt: string;
   viewerCount: number;
   viewedByMe: boolean;
-  viewers?: { user: string; viewedAt: string }[];
+  viewers?: ViewerItem[];
 }
 
 interface StatusEntry {
@@ -248,20 +254,56 @@ export default function StatusViewer({ statuses, initialIndex, onClose, onDelete
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="absolute inset-x-0 bottom-0 z-20 bg-card rounded-t-2xl max-h-64 overflow-y-auto"
+              className="absolute inset-x-0 bottom-0 z-20 bg-card rounded-t-2xl max-h-72 overflow-y-auto border-t border-border shadow-2xl"
             >
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                <span className="text-sm font-semibold">Viewed by</span>
-                <button onClick={() => setShowViewers(false)}><X className="w-4 h-4" /></button>
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur-xs z-10">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold">
+                    Viewed by ({currentSlide.viewerCount})
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowViewers(false)}
+                  className="p-1 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
               {(currentSlide.viewers || []).length === 0 ? (
-                <p className="px-4 py-6 text-center text-sm text-muted-foreground">No views yet</p>
+                <p className="px-4 py-8 text-center text-xs text-muted-foreground">No views yet</p>
               ) : (
-                (currentSlide.viewers || []).map((v, i) => (
-                  <div key={i} className="px-4 py-2 text-sm text-muted-foreground">
-                    Viewed {timeAgo(v.viewedAt)}
-                  </div>
-                ))
+                <div className="divide-y divide-border/40">
+                  {(currentSlide.viewers || []).map((v: any, i: number) => {
+                    const viewerUser =
+                      typeof v.user === "object" ? v.user : { name: "User", avatar: "" };
+                    return (
+                      <div
+                        key={i}
+                        className="px-4 py-2.5 flex items-center gap-3 hover:bg-accent/40 transition-colors"
+                      >
+                        <ChatAvatar
+                          name={viewerUser.name || "User"}
+                          src={viewerUser.avatar?.url || viewerUser.avatar}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">
+                            {viewerUser.name || "User"}
+                          </p>
+                          {viewerUser.username && (
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              @{viewerUser.username}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                          {timeAgo(v.viewedAt)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </motion.div>
           )}

@@ -107,7 +107,8 @@ const getFriendsStatuses = TryCatch(async (req, res) => {
     user: { $in: allUserIds },
     expiresAt: { $gt: now },
   })
-    .populate("user", "name avatar")
+    .populate("user", "name username avatar")
+    .populate("slides.viewers.user", "name username avatar")
     .sort({ updatedAt: -1 });
 
   // Ensure each individual slide follows 24-hour visibility.
@@ -140,6 +141,7 @@ const getFriendsStatuses = TryCatch(async (req, res) => {
     user: {
       _id: s.user._id,
       name: s.user.name,
+      username: s.user.username || "",
       avatar: s.user.avatar?.url,
     },
     slides: s.slides.map((slide) => ({
@@ -151,12 +153,20 @@ const getFriendsStatuses = TryCatch(async (req, res) => {
       createdAt: slide.createdAt,
       viewerCount: slide.viewers.length,
       viewedByMe: slide.viewers.some(
-        (v) => v.user.toString() === req.user.toString()
+        (v) => (v.user?._id || v.user)?.toString() === req.user.toString()
       ),
       // Only show viewer list for own status
       viewers:
         s.user._id.toString() === req.user.toString()
-          ? slide.viewers
+          ? slide.viewers.map((v) => ({
+              user: {
+                _id: v.user?._id || v.user,
+                name: v.user?.name || "User",
+                username: v.user?.username || "",
+                avatar: v.user?.avatar?.url || "",
+              },
+              viewedAt: v.viewedAt,
+            }))
           : undefined,
     })),
     expiresAt: s.expiresAt,
