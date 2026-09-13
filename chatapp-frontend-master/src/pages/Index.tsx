@@ -78,7 +78,12 @@ export default function Index() {
         "flex-1 flex flex-col min-w-0",
         selectedChat ? "flex" : "hidden md:flex"
       )}>
-        <ChatArea chatId={selectedChat} chats={chats} onBack={() => setSelectedChat(null)} />
+        <ChatArea
+          chatId={selectedChat}
+          chats={chats}
+          onBack={() => setSelectedChat(null)}
+          onRefreshChats={fetchChats}
+        />
       </div>
     </div>
   );

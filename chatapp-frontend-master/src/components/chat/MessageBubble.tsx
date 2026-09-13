@@ -4,18 +4,37 @@ import { formatTime, fileFormat } from "@/lib/features";
 import type { Message } from "@/store/appStore";
 import VoiceMessage from "./VoiceMessage";
 import { motion } from "framer-motion";
-import { Download, FileText, Music, Video, ZoomIn } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Music,
+  Video,
+  ZoomIn,
+  Check,
+  CheckCheck,
+  Reply,
+  Copy,
+  Smile,
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   message: Message;
   isSelf: boolean;
   showName?: boolean;
+  onReply?: (message: Message) => void;
 }
 
 const NAME_COLORS = [
-  "text-emerald-500", "text-sky-500", "text-violet-500",
-  "text-amber-500", "text-rose-500", "text-cyan-500", "text-indigo-500",
+  "text-emerald-500",
+  "text-sky-500",
+  "text-violet-500",
+  "text-amber-500",
+  "text-rose-500",
+  "text-cyan-500",
+  "text-indigo-500",
 ];
+
 function getNameColor(name: string) {
   let h = 0;
   for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
@@ -45,7 +64,7 @@ const VOICE_WAVEFORM_BAR_HEIGHTS = [
 ];
 
 // ── Image with lightbox ───────────────────────────────────────────────────────
-function ImageAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
+function ImageAttachment({ url }: { url: string }) {
   const [lightbox, setLightbox] = useState(false);
   return (
     <>
@@ -65,7 +84,7 @@ function ImageAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
       </div>
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setLightbox(false)}
         >
           <img
@@ -79,7 +98,7 @@ function ImageAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
             target="_blank"
             rel="noopener noreferrer"
             download
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+            className="absolute top-4 right-4 p-2.5 bg-white/15 hover:bg-white/30 rounded-full text-white transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <Download className="w-5 h-5" />
@@ -99,7 +118,6 @@ function VideoAttachment({ url }: { url: string }) {
 }
 
 function AudioAttachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
-  // Voice notes get the fancy player; other audio files get the compact one
   if (isVoiceNote(url)) {
     return (
       <VoiceMessage
@@ -114,13 +132,19 @@ function AudioAttachment({ url, isSelf, time }: { url: string; isSelf: boolean; 
   }
 
   return (
-    <div className={cn("flex items-center gap-2 rounded-xl px-3 py-2 max-w-[260px]",
-      isSelf ? "bg-black/10" : "bg-black/5"
-    )}>
-      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-        isSelf ? "bg-primary/20" : "bg-muted"
-      )}>
-        <Music className="w-4 h-4 text-primary" />
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-xl px-3 py-2 max-w-[260px]",
+        isSelf ? "bg-black/10" : "bg-black/5"
+      )}
+    >
+      <div
+        className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+          isSelf ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+        )}
+      >
+        <Music className="w-4 h-4" />
       </div>
       <audio controls src={url} className="flex-1 h-8 min-w-0" style={{ accentColor: "hsl(var(--primary))" }} />
     </div>
@@ -141,9 +165,12 @@ function FileAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
         isSelf ? "bg-black/10 hover:bg-black/15" : "bg-black/5 hover:bg-black/10"
       )}
     >
-      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-bold",
-        isSelf ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-      )}>
+      <div
+        className={cn(
+          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-bold",
+          isSelf ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+        )}
+      >
         {ext}
       </div>
       <div className="flex-1 min-w-0">
@@ -157,8 +184,6 @@ function FileAttachment({ url, isSelf }: { url: string; isSelf: boolean }) {
 
 function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time: string }) {
   const fname = getFileName(url).toLowerCase();
-  // IMPORTANT: check voice notes before generic file type checks
-  // so `.webm` notes don't get rendered as <video>.
   if (isVoiceNote(url) || fname.endsWith(".webm") || fname.endsWith(".ogg")) {
     return (
       <VoiceMessage
@@ -173,17 +198,47 @@ function Attachment({ url, isSelf, time }: { url: string; isSelf: boolean; time:
   }
 
   const type = fileFormat(url);
-  if (type === "image") return <ImageAttachment url={url} isSelf={isSelf} />;
+  if (type === "image") return <ImageAttachment url={url} />;
   if (type === "video") return <VideoAttachment url={url} />;
   if (type === "audio") return <AudioAttachment url={url} isSelf={isSelf} time={time} />;
   return <FileAttachment url={url} isSelf={isSelf} />;
 }
 
-export default function MessageBubble({ message, isSelf, showName }: Props) {
-  if (message.sender.name === "Admin") {
+function MessageStatusIndicator({ message, isSelf }: { message: Message; isSelf: boolean }) {
+  if (!isSelf) return null;
+  const isRead = message.readBy && message.readBy.length > 0;
+  const isDelivered = message.deliveredTo && message.deliveredTo.length > 0;
+
+  if (isRead) {
     return (
-      <div className="flex justify-center my-1">
-        <span className="bg-accent text-muted-foreground text-xs px-3 py-1 rounded-lg">
+      <span title="Read" className="inline-flex items-center text-primary ml-1">
+        <CheckCheck className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  if (isDelivered) {
+    return (
+      <span title="Delivered" className="inline-flex items-center text-muted-foreground/80 ml-1">
+        <CheckCheck className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  return (
+    <span title="Sent" className="inline-flex items-center text-muted-foreground/60 ml-1">
+      <Check className="w-3 h-3" />
+    </span>
+  );
+}
+
+export default function MessageBubble({ message, isSelf, showName, onReply }: Props) {
+  const [reactions, setReactions] = useState<string[]>([]);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+  // System alerts / Admin broadcast messages
+  if (message.sender?.name === "Admin") {
+    return (
+      <div className="flex justify-center my-2 select-none">
+        <span className="px-3.5 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/50 text-[11px] font-medium shadow-xs backdrop-blur-xs">
           {message.content}
         </span>
       </div>
@@ -197,53 +252,163 @@ export default function MessageBubble({ message, isSelf, showName }: Props) {
     message.attachments.length === 1 &&
     isVoiceNote(message.attachments[0].url);
 
+  const handleCopy = () => {
+    if (!message.content) return;
+    navigator.clipboard.writeText(message.content);
+    toast.success("Copied to clipboard");
+  };
+
+  const handleToggleReaction = (emoji: string) => {
+    setReactions((prev) =>
+      prev.includes(emoji) ? prev.filter((e) => e !== emoji) : [...prev, emoji]
+    );
+    setShowReactionPicker(false);
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+      initial={{ opacity: 0, y: 6, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.18 }}
-      className={cn("flex", isSelf ? "justify-end" : "justify-start")}
+      transition={{ duration: 0.16 }}
+      className={cn("group/msg relative flex items-end gap-1.5 my-0.5", isSelf ? "justify-end" : "justify-start")}
     >
+      {/* Quick Action Floating Toolbar (visible on hover) */}
       <div
         className={cn(
-          "max-w-[75%] md:max-w-[65%] relative",
+          "absolute -top-7 opacity-0 group-hover/msg:opacity-100 transition-all duration-150 flex items-center gap-1 bg-card/95 border border-border rounded-full p-1 shadow-md z-10",
+          isSelf ? "right-2" : "left-2"
+        )}
+      >
+        <button
+          onClick={() => setShowReactionPicker(!showReactionPicker)}
+          className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+          title="React"
+        >
+          <Smile className="w-3.5 h-3.5" />
+        </button>
+        {onReply && (
+          <button
+            onClick={() => onReply(message)}
+            className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+            title="Reply"
+          >
+            <Reply className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {message.content && (
+          <button
+            onClick={handleCopy}
+            className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+            title="Copy"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Floating Emoji Picker Tray */}
+      {showReactionPicker && (
+        <div
+          className={cn(
+            "absolute -top-11 z-20 flex items-center gap-1.5 bg-card border border-border rounded-full px-2 py-1 shadow-lg",
+            isSelf ? "right-0" : "left-0"
+          )}
+        >
+          {["👍", "❤️", "😂", "🔥", "🎉", "😮"].map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => handleToggleReaction(emoji)}
+              className="text-sm hover:scale-125 transition-transform p-0.5 cursor-pointer"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Main Bubble */}
+      <div
+        className={cn(
+          "max-w-[78%] md:max-w-[65%] relative",
           hasAttachments && !message.content
             ? ""
             : cn(
                 "px-3.5 py-2",
                 isSelf
-                  ? "bg-chat-bubble-sent text-chat-bubble-sent-fg rounded-2xl rounded-br-sm"
-                  : "bg-chat-bubble-received text-chat-bubble-received-fg rounded-2xl rounded-bl-sm shadow-sm"
+                  ? "bg-chat-bubble-sent text-chat-bubble-sent-fg rounded-2xl rounded-br-xs shadow-xs"
+                  : "bg-chat-bubble-received text-chat-bubble-received-fg rounded-2xl rounded-bl-xs shadow-sm border border-border/40"
               )
         )}
       >
-        {showName && !isSelf && message.sender.name !== "Admin" && (
-          <p className={cn("text-xs font-semibold mb-1", getNameColor(message.sender.name))}>
+        {/* Sender Name for Group Chats */}
+        {showName && !isSelf && message.sender && (
+          <p className={cn("text-xs font-semibold mb-1 tracking-tight", getNameColor(message.sender.name))}>
             {message.sender.name}
           </p>
         )}
 
+        {/* Quoted Message / Reply Banner */}
+        {message.replyTo && (
+          <div
+            className={cn(
+              "mb-2 p-2 rounded-xl text-xs border-l-2 bg-black/5 dark:bg-white/5",
+              isSelf ? "border-primary" : "border-muted-foreground"
+            )}
+          >
+            <p className="font-semibold text-[11px] opacity-90">{message.replyTo.senderName}</p>
+            <p className="truncate opacity-70 text-[10px] mt-0.5">{message.replyTo.content}</p>
+          </div>
+        )}
+
+        {/* Attachments */}
         {hasAttachments && (
           <div className={cn("space-y-1.5", message.content ? "mb-2" : "")}>
             {message.attachments!.map((att, i) => (
-              <Attachment key={i} url={att.url} isSelf={isSelf} time={formatTime(message.createdAt)} />
+              <Attachment
+                key={i}
+                url={att.url}
+                isSelf={isSelf}
+                time={formatTime(message.createdAt)}
+              />
             ))}
           </div>
         )}
 
+        {/* Message Text Content */}
         {message.content && (
-          <p className="text-sm leading-relaxed break-words">{message.content}</p>
+          <p className="text-sm leading-relaxed break-words whitespace-pre-wrap selection:bg-primary/20">
+            {message.content}
+          </p>
         )}
 
+        {/* Timestamp and Read Status */}
         {!onlyVoiceNoteAttachment && (
-          <span className={cn(
-            "text-[10px] float-right mt-1 ml-3",
-            isSelf ? "text-primary/60" : "text-muted-foreground"
-          )}>
-            {formatTime(message.createdAt)}
-          </span>
+          <div
+            className={cn(
+              "flex items-center justify-end gap-1 mt-1 select-none",
+              isSelf ? "text-primary/70 dark:text-primary/80" : "text-muted-foreground"
+            )}
+          >
+            <span className="text-[10px]">{formatTime(message.createdAt)}</span>
+            <MessageStatusIndicator message={message} isSelf={isSelf} />
+          </div>
+        )}
+
+        {/* Emoji Reactions Tray on Bubble */}
+        {reactions.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1 -mb-1">
+            {reactions.map((emoji, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center text-xs bg-card/80 border border-border/80 rounded-full px-1.5 py-0.5 shadow-xs"
+              >
+                {emoji}
+              </span>
+            ))}
+          </div>
         )}
       </div>
     </motion.div>
   );
 }
+

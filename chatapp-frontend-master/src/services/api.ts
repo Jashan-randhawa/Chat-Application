@@ -91,6 +91,9 @@ export const leaveGroup = (chatId: string) => api.delete(`/chat/leave/${chatId}`
 export const getMessages = (chatId: string, page = 1) =>
   api.get(`/chat/message/${chatId}?page=${page}`);
 
+export const markMessageAsRead = (messageId: string) =>
+  api.put(`/chat/message/${messageId}/read`);
+
 export const sendAttachments = (formData: FormData) =>
   api.post("/chat/message", formData, { headers: { "Content-Type": "multipart/form-data" } });
 

@@ -26,6 +26,13 @@ export interface Message {
   chat: string;
   createdAt: string;
   attachments?: { url: string; public_id: string }[];
+  deliveredTo?: string[];
+  readBy?: string[];
+  replyTo?: {
+    _id: string;
+    content: string;
+    senderName: string;
+  };
 }
 
 interface NewMessageAlert {
