@@ -10,8 +10,9 @@ interface AdminMessage {
   _id: string;
   content: string;
   attachments: { url: string }[];
-  sender: { name: string; avatar: string };
+  sender: { _id?: string; name: string; username?: string; avatar: string };
   chat: string;
+  chatName?: string;
   groupChat: boolean;
   createdAt: string;
 }
@@ -92,7 +93,7 @@ export default function MessageManagement() {
               className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-5 py-3.5 border-b border-white/5 last:border-b-0 items-center hover:bg-white/[0.02] transition-colors"
             >
               {/* Sender */}
-              <div className="col-span-3 flex items-center gap-2.5">
+              <div className="col-span-3 flex items-center gap-2.5 min-w-0">
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-amber-500/20 flex items-center justify-center">
                   {m.sender.avatar ? (
                     <img src={m.sender.avatar} alt="" className="w-full h-full object-cover" />
@@ -100,7 +101,12 @@ export default function MessageManagement() {
                     <span className="text-amber-300 text-[10px] font-bold">{m.sender.name[0]}</span>
                   )}
                 </div>
-                <span className="text-sm text-white/70 truncate font-medium">{m.sender.name}</span>
+                <div className="min-w-0">
+                  <span className="text-sm text-white/90 truncate font-medium block">{m.sender.name}</span>
+                  {m.sender.username && (
+                    <span className="text-[10px] text-white/40 truncate block">@{m.sender.username}</span>
+                  )}
+                </div>
               </div>
 
               {/* Content */}

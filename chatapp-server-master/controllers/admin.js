@@ -64,7 +64,7 @@ const allUsers = TryCatch(async (req, res) => {
       return {
         name,
         username,
-        avatar: avatar.url,
+        avatar: avatar?.url || "",
         _id,
         groups,
         friends,
@@ -80,28 +80,33 @@ const allUsers = TryCatch(async (req, res) => {
 
 const allChats = TryCatch(async (req, res) => {
   const chats = await Chat.find({})
-    .populate("members", "name avatar")
-    .populate("creator", "name avatar");
+    .populate("members", "name username avatar")
+    .populate("creator", "name username avatar");
 
   const transformedChats = await Promise.all(
     chats.map(async ({ members, _id, groupChat, name, creator }) => {
       const totalMessages = await Message.countDocuments({ chat: _id });
+      const safeMembers = Array.isArray(members) ? members : [];
 
       return {
         _id,
         groupChat,
-        name,
-        avatar: members.slice(0, 3).map((member) => member.avatar.url),
-        members: members.map(({ _id, name, avatar }) => ({
+        name: name || "Unnamed Group",
+        avatar: safeMembers
+          .slice(0, 3)
+          .map((member) => member?.avatar?.url)
+          .filter(Boolean),
+        members: safeMembers.map(({ _id, name, username, avatar }) => ({
           _id,
           name,
-          avatar: avatar.url,
+          username: username || "",
+          avatar: avatar?.url || "",
         })),
         creator: {
           name: creator?.name || "None",
-          avatar: creator?.avatar.url || "",
+          avatar: creator?.avatar?.url || "",
         },
-        totalMembers: members.length,
+        totalMembers: safeMembers.length,
         totalMessages,
       };
     })
@@ -115,21 +120,23 @@ const allChats = TryCatch(async (req, res) => {
 
 const allMessages = TryCatch(async (req, res) => {
   const messages = await Message.find({})
-    .populate("sender", "name avatar")
-    .populate("chat", "groupChat");
+    .populate("sender", "name username avatar")
+    .populate("chat", "groupChat name");
 
   const transformedMessages = messages.map(
     ({ content, attachments, _id, sender, createdAt, chat }) => ({
       _id,
-      attachments,
-      content,
+      attachments: attachments || [],
+      content: content || "",
       createdAt,
-      chat: chat._id,
-      groupChat: chat.groupChat,
+      chat: chat?._id || "",
+      chatName: chat?.name || "",
+      groupChat: chat?.groupChat ?? false,
       sender: {
-        _id: sender._id,
-        name: sender.name,
-        avatar: sender.avatar.url,
+        _id: sender?._id || "",
+        name: sender?.name || "Deleted User",
+        username: sender?.username || "",
+        avatar: sender?.avatar?.url || "",
       },
     })
   );
