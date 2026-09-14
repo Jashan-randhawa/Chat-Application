@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LUXURY_PALETTES } from "@/config/palette";
+import AppLogo from "@/components/common/AppLogo";
 
 type PanelType = "chats" | "notifications" | "groups" | "friends" | "search" | "status" | null;
 
@@ -433,8 +434,13 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
     <div className="flex h-full">
       {/* ── Vertical Icon Rail ────────────────────────────────── */}
       <div className="flex flex-col items-center w-14 bg-card border-r border-border py-3 gap-1 flex-shrink-0">
+        {/* App Logo Mark */}
+        <div className="mb-2.5 transition-transform hover:scale-110 cursor-pointer" title="Emerald Chat">
+          <AppLogo size="sm" showWordmark={false} glow={true} />
+        </div>
+
         {/* Avatar at top */}
-        <div className="mb-3">
+        <div className="mb-2">
           <ChatAvatar name={user?.name || "User"} src={user?.avatar?.url} size="sm" />
         </div>
 

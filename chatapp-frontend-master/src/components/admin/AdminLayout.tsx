@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import AppLogo from "@/components/common/AppLogo";
 
 const navItems = [
   { label: "Dashboard",  path: "/admin/dashboard", icon: LayoutDashboard, color: "text-emerald-400" },
@@ -41,12 +42,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="flex flex-col h-full">
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg">
-            <Shield className="w-4 h-4 text-white" />
-          </div>
+          <AppLogo size="sm" showWordmark={false} glow={true} />
           <div>
-            <p className="font-bold text-sm text-white leading-none">Admin Panel</p>
-            <p className="text-[10px] text-white/40 mt-0.5">Control Center</p>
+            <p className="font-bold text-sm text-white leading-none">Emerald Admin</p>
+            <p className="text-[10px] text-emerald-400/70 font-medium mt-0.5">Control Center</p>
           </div>
         </div>
       </div>

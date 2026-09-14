@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="favAmbientGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#059669" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="favEmFacetTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="50%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="favEmFacetLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="favEmFacetRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="favEmFacetBottom" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="favEmFacetCenter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7f3d0" />
+      <stop offset="45%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="favTailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="64" cy="62" r="58" fill="url(#favAmbientGlow)" />
+
+  <g>
+    <!-- Chat Tail pointing bottom-left -->
+    <path
+      d="M 38 88 L 22 108 C 21 109.5 22.8 111 24.5 110 L 48 98 Z"
+      fill="url(#favTailGrad)"
+    />
+
+    <!-- Outer Emerald Facet Base -->
+    <polygon points="40,24 64,14 64,44 40,54" fill="url(#favEmFacetTop)" opacity="0.95" />
+    <polygon points="64,14 88,24 88,54 64,44" fill="url(#favEmFacetRight)" opacity="0.9" />
+    <polygon points="24,44 40,24 40,54 24,70" fill="url(#favEmFacetLeft)" />
+    <polygon points="88,24 104,44 104,70 88,54" fill="url(#favEmFacetRight)" />
+    <polygon points="24,70 40,54 40,84 32,96" fill="url(#favEmFacetBottom)" />
+    <polygon points="40,54 64,64 64,96 40,84" fill="url(#favEmFacetLeft)" />
+    <polygon points="88,54 104,70 96,96 88,84" fill="url(#favEmFacetBottom)" />
+    <polygon points="64,64 88,54 88,84 64,96" fill="url(#favEmFacetRight)" />
+
+    <!-- Center Brilliant Table -->
+    <polygon
+      points="40,54 64,44 88,54 88,74 64,84 40,74"
+      fill="url(#favEmFacetCenter)"
+    />
+
+    <!-- Modern Chat Dots / Messaging Signal -->
+    <g transform="translate(64, 64)">
+      <circle cx="-14" cy="0" r="4" fill="#ffffff" />
+      <circle cx="0" cy="0" r="5" fill="#ffffff" />
+      <circle cx="14" cy="0" r="4" fill="#ffffff" />
+    </g>
+
+    <!-- Highlight Reflection Accents -->
+    <polygon points="40,24 64,14 64,18 42,27" fill="#ffffff" opacity="0.7" />
+    <polygon points="24,44 40,24 38,27 26,45" fill="#ffffff" opacity="0.5" />
+  </g>
+</svg>

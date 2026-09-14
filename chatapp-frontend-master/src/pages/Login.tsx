@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import AppLogo from "@/components/common/AppLogo";
 
 type PaletteKey = "violet" | "cobalt" | "emerald" | "rose";
 
@@ -233,23 +234,7 @@ export default function Login() {
 
         {/* Top brand header */}
         <div className="relative z-10 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 xl:gap-3">
-            <div className={`brand-logo-mark w-9 h-9 xl:w-11 xl:h-11 rounded-xl flex items-center justify-center shrink-0 border ${activeTheme.glowBorder} shadow-md`}>
-              <MessageSquare className={`w-4 h-4 xl:w-5 xl:h-5 ${activeTheme.logoGlow} relative z-10`} />
-            </div>
-            <div>
-              <span className="font-bold text-base xl:text-lg tracking-tight text-slate-900 dark:text-white flex items-center gap-1">
-                <span>Chat</span>
-                <span className={activeTheme.textGradClass}>App</span>
-                <span className="ml-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-950/80 text-white border border-white/20 uppercase tracking-wider">
-                  PRO
-                </span>
-              </span>
-              <p className="text-[10px] xl:text-[11px] font-medium tracking-wide text-slate-600 dark:text-slate-400 uppercase">
-                Real-Time Messaging Mesh
-              </p>
-            </div>
-          </div>
+          <AppLogo size="lg" showWordmark={true} subtitle="Real-Time Messaging Mesh" glow={true} />
 
           <div className="flex items-center gap-2 px-2.5 py-1 xl:px-3 xl:py-1.5 rounded-full bg-white/50 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800 text-[11px] xl:text-xs font-medium backdrop-blur-xs text-slate-700 dark:text-slate-300">
             <span className={`w-2 h-2 rounded-full ${activeTheme.dotColor} animate-pulse`} />
@@ -290,8 +275,8 @@ export default function Login() {
 
         {/* Ambient bottom wordmark */}
         <div className="relative z-0 select-none pointer-events-none mt-auto pt-2 shrink-0">
-          <span className="font-display text-4xl lg:text-5xl xl:text-6xl tracking-tight leading-none text-slate-900/10 dark:text-white/5 block whitespace-nowrap overflow-hidden text-ellipsis">
-            ChatApp
+          <span className="font-display text-4xl lg:text-5xl xl:text-6xl tracking-wider leading-none text-slate-900/10 dark:text-white/5 block whitespace-nowrap overflow-hidden text-ellipsis uppercase">
+            EMERALD
           </span>
         </div>
       </div>
@@ -300,13 +285,8 @@ export default function Login() {
       <div className="flex-1 h-full flex flex-col justify-between p-4 sm:p-6 md:p-8 lg:p-8 xl:p-10 relative bg-background text-foreground transition-colors duration-200 overflow-y-auto">
         {/* Top corner utilities */}
         <div className="flex items-center justify-between w-full mb-3 lg:mb-4 shrink-0">
-          <div className="lg:hidden flex items-center gap-2">
-            <div className={`brand-logo-mark w-7 h-7 rounded-lg flex items-center justify-center border ${activeTheme.glowBorder}`}>
-              <MessageSquare className={`w-3.5 h-3.5 ${activeTheme.logoGlow} relative z-10`} />
-            </div>
-            <span className="text-sm font-bold text-foreground">
-              Chat<span className={activeTheme.textGradClass}>App</span>
-            </span>
+          <div className="lg:hidden flex items-center">
+            <AppLogo size="xs" showWordmark={true} />
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -510,7 +490,7 @@ export default function Login() {
                     </>
                   ) : (
                     <>
-                      {isLogin ? "Sign In to ChatApp" : "Complete Registration"}
+                      {isLogin ? "Sign In to Emerald" : "Complete Registration"}
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

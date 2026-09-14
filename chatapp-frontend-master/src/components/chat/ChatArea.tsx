@@ -10,6 +10,7 @@ import MessageBubble from "./MessageBubble";
 import ChatDetailsSheet from "./ChatDetailsSheet";
 import CallModal, { type CallStatus } from "./CallModal";
 import { useWebRTC } from "@/hooks/useWebRTC";
+import AppLogo from "@/components/common/AppLogo";
 import {
   MessageSquare,
   Loader2,
@@ -493,16 +494,15 @@ export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Prop
       <div className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-slate-50 dark:bg-[#0b0f17] transition-colors p-6">
         <div className="flex flex-col items-center gap-6 animate-fade-in relative z-10 text-center max-w-md">
           <div className="relative">
-            <div className="w-20 h-20 rounded-3xl bg-card border border-border/80 flex items-center justify-center shadow-xl">
-              <MessageSquare className="w-9 h-9 text-primary" />
-            </div>
+            <AppLogo size="2xl" showWordmark={false} glow={true} />
             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[10px] shadow-sm">
               <ShieldCheck className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <h2 className="text-2xl font-bold font-display tracking-tight text-foreground">
-              Antigravity Chat
+            <h2 className="text-2xl font-bold font-display tracking-tight text-foreground flex items-center justify-center gap-1.5">
+              <span>Emerald</span>
+              <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 bg-clip-text text-transparent">Chat</span>
             </h2>
             <p className="text-muted-foreground text-xs leading-relaxed max-w-sm">
               Select a conversation from the sidebar or start a new direct or group chat to begin messaging.
