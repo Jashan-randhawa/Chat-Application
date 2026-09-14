@@ -432,8 +432,8 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
 
   return (
     <div className="flex h-full">
-      {/* ── Vertical Icon Rail ────────────────────────────────── */}
-      <div className="flex flex-col items-center w-14 bg-card border-r border-border py-3 gap-1 flex-shrink-0">
+      {/* ── Desktop Vertical Icon Rail (hidden on mobile) ──────────────── */}
+      <div className="hidden md:flex flex-col items-center w-14 bg-card border-r border-border py-3 gap-1 flex-shrink-0">
         {/* App Logo Mark */}
         <div className="mb-2.5 transition-transform hover:scale-110 cursor-pointer" title="Emerald Chat">
           <AppLogo size="sm" showWordmark={false} glow={true} />
@@ -492,8 +492,38 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
         </button>
       </div>
 
-      {/* ── Panel Area ────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-w-0 bg-card overflow-hidden">
+      {/* ── Main Content Area (Panel + Mobile Navigation) ─────────── */}
+      <div className="flex flex-col flex-1 min-w-0 bg-card overflow-hidden h-full">
+        {/* Mobile Top App Bar */}
+        <div className="md:hidden flex items-center justify-between px-3.5 py-2.5 bg-card/95 backdrop-blur-md border-b border-border/70 flex-shrink-0 select-none">
+          <div className="flex items-center gap-2.5">
+            <AppLogo size="sm" showWordmark={true} />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <button
+              onClick={() => navigate("/admin")}
+              title="Admin Control Center"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-400 hover:bg-muted/80 transition-colors"
+            >
+              <Shield className="w-4 h-4" />
+            </button>
+            <div className="ml-1 pl-1 border-l border-border/60 flex items-center gap-1.5">
+              <ChatAvatar name={user?.name || "User"} src={user?.avatar?.url} size="xs" />
+              <button
+                onClick={handleLogout}
+                title="Logout"
+                className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel Area Body */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
 
           {/* ── CHATS PANEL ── */}
@@ -1059,6 +1089,37 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
           )}
 
         </AnimatePresence>
+        </div>
+
+        {/* ── Mobile Bottom Navigation Bar ─────────────────────────── */}
+        <div className="md:hidden flex items-center justify-around border-t border-border/80 bg-card/95 backdrop-blur-lg px-2 py-2 flex-shrink-0 select-none safe-area-inset-bottom">
+          {navItems.map((item) => {
+            const isActive = activePanel === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handlePanelChange(item.id)}
+                className={cn(
+                  "relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer",
+                  isActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <div className="relative">
+                  {item.icon}
+                  {item.badge !== null && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full bg-destructive text-destructive-foreground text-[8px] font-bold flex items-center justify-center px-0.5 shadow-xs">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
+                {isActive && (
+                  <span className="absolute -bottom-1 w-5 h-0.5 bg-primary rounded-full shadow-xs" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Friend voice call modal */}

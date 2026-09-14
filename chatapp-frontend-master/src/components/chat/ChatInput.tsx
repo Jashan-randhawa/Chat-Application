@@ -305,7 +305,7 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute bottom-full left-4 sm:left-6 mb-3 bg-card/95 dark:bg-[#161b26]/95 border border-border/80 rounded-3xl shadow-2xl backdrop-blur-xl z-40 w-72 overflow-hidden p-2"
+            className="absolute bottom-full left-2 sm:left-6 mb-3 bg-card/95 dark:bg-[#161b26]/95 border border-border/80 rounded-3xl shadow-2xl backdrop-blur-xl z-40 w-[calc(100vw-24px)] max-w-xs sm:w-72 overflow-hidden p-2"
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
@@ -441,7 +441,7 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-4 mb-2 p-2.5 bg-card/95 border border-border/80 rounded-2xl shadow-xl backdrop-blur-xl z-30 max-w-[280px]"
+            className="absolute bottom-full left-2 sm:left-4 mb-2 p-2.5 bg-card/95 border border-border/80 rounded-2xl shadow-xl backdrop-blur-xl z-30 w-[calc(100vw-24px)] max-w-[280px]"
           >
             <div className="grid grid-cols-6 gap-1">
               {COMMON_EMOJIS.map((emoji) => (

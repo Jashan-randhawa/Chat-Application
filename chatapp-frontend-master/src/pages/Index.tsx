@@ -86,17 +86,17 @@ export default function Index() {
 
   if (chatsLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="h-screen h-[100dvh] flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-background">
+    <div className="h-screen h-[100dvh] flex overflow-hidden bg-background">
       <div className={cn(
         "w-full md:w-[380px] md:min-w-[320px] md:max-w-[420px] flex-shrink-0 md:block",
-        selectedChat ? "hidden" : "block"
+        selectedChat ? "hidden" : "block h-full"
       )}>
         <Sidebar
           selectedChat={selectedChat}
