@@ -8,7 +8,7 @@ import { Status } from "../models/status.js";
 import { ErrorHandler } from "../utils/utility.js";
 import { cookieOptions, deletFilesFromCloudinary } from "../utils/features.js";
 import { adminSecretKey, onlineUsers } from "../app.js";
-import { analyzeContent } from "../utils/moderation.js";
+import { analyzeContent, detectFloodPatterns } from "../utils/moderation.js";
 
 const adminLogin = TryCatch(async (req, res, next) => {
   const { secretKey } = req.body;
@@ -137,9 +137,24 @@ const allMessages = TryCatch(async (req, res) => {
     .populate("sender", "name username avatar")
     .populate("chat", "groupChat name");
 
+  // Cross-message spam patterns (repeated messages, rapid bursts) that a single
+  // message can't reveal on its own — computed once over the whole fetched set.
+  const floodResults = detectFloodPatterns(messages);
+
   const transformedMessages = messages.map(
     ({ content, attachments, _id, sender, createdAt, chat }) => {
       const moderation = analyzeContent(content || "", attachments || []);
+
+      const flood = floodResults.get(_id.toString());
+      if (flood?.isFlooding) {
+        moderation.isFlagged = true;
+        moderation.categories = Array.from(new Set([...moderation.categories, "Spam & Scam"]));
+        moderation.reasons = [...moderation.reasons, flood.reason];
+        moderation.spamScore = Math.min(100, moderation.spamScore + 40);
+        moderation.score = Math.min(100, moderation.spamScore + moderation.inappropriateScore);
+        if (moderation.severity !== "high") moderation.severity = "medium";
+      }
+
       return {
         _id,
         attachments: attachments || [],
@@ -175,6 +190,7 @@ const getDashboardStats = TryCatch(async (req, res) => {
     pendingRequestsCount,
     activeStatusesCount,
     messagesWithMediaCount,
+    recentMessagesForMod,
   ] = await Promise.all([
     Chat.countDocuments({ groupChat: true }),
     User.countDocuments(),
@@ -184,7 +200,7 @@ const getDashboardStats = TryCatch(async (req, res) => {
     Request.countDocuments({ status: "pending" }),
     Status.countDocuments({ expiresAt: { $gt: new Date() } }),
     Message.countDocuments({ attachments: { $exists: true, $ne: [] } }),
-    Message.find({}).sort({ createdAt: -1 }).limit(1000).select("content attachments"),
+    Message.find({}).sort({ createdAt: -1 }).limit(1000).select("content attachments sender createdAt"),
   ]);
 
   let flaggedMessagesCount = 0;
@@ -192,19 +208,19 @@ const getDashboardStats = TryCatch(async (req, res) => {
   let inappropriateAlertsCount = 0;
   let highSeverityAlertsCount = 0;
 
+  const floodResults = detectFloodPatterns(recentMessagesForMod);
+
   recentMessagesForMod.forEach((msg) => {
     const mod = analyzeContent(msg.content, msg.attachments);
-    if (mod.isFlagged) {
+    const flood = floodResults.get(msg._id.toString());
+    const isFlagged = mod.isFlagged || flood?.isFlooding;
+    const isSpam = mod.categories.includes("Spam & Scam") || mod.categories.includes("Suspicious Link") || flood?.isFlooding;
+
+    if (isFlagged) {
       flaggedMessagesCount++;
-      if (mod.categories.includes("Spam & Scam") || mod.categories.includes("Suspicious Link")) {
-        spamAlertsCount++;
-      }
-      if (mod.categories.includes("Inappropriate Content")) {
-        inappropriateAlertsCount++;
-      }
-      if (mod.severity === "high") {
-        highSeverityAlertsCount++;
-      }
+      if (isSpam) spamAlertsCount++;
+      if (mod.categories.includes("Inappropriate Content")) inappropriateAlertsCount++;
+      if (mod.severity === "high") highSeverityAlertsCount++;
     }
   });
 
