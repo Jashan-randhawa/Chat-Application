@@ -15,6 +15,9 @@ import {
   Smile,
   Reply,
   Loader2,
+  Camera,
+  Headphones,
+  FolderArchive,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fileFormat } from "@/lib/features";
@@ -64,9 +67,35 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
   const [uploading, setUploading] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
 
-  const fileRef = useRef<HTMLInputElement>(null);
+  // Category specific file refs for selective uploads
+  const documentInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const archiveInputRef = useRef<HTMLInputElement>(null);
+  const generalFileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close attach menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        attachMenuRef.current &&
+        !attachMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowAttachMenu(false);
+      }
+    };
+    if (showAttachMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showAttachMenu]);
 
   // Typing state
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,7 +139,8 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       return;
     }
     setPendingFiles((prev) => [...prev, ...files.map(buildPending)]);
-    if (fileRef.current) fileRef.current.value = "";
+    e.target.value = "";
+    setShowAttachMenu(false);
   };
 
   const removeFile = (index: number) => {
@@ -177,12 +207,10 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       const formData = new FormData();
       formData.append("chatId", chatId);
 
-      if (hasText) {
-        const trimmed = text.trim();
+      const trimmed = text.trim();
+      if (trimmed) {
         const finalCaption = replyTo ? encodeReplyMessage(replyTo, trimmed) : trimmed;
-        if (socket) {
-          socket.emit(EVENTS.NEW_MESSAGE, { chatId, message: finalCaption });
-        }
+        formData.append("message", finalCaption);
       }
 
       pendingFiles.forEach((pf) => formData.append("files", pf.file));
@@ -211,15 +239,174 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
 
   return (
     <div className="relative border-t border-border/60 bg-card/90 dark:bg-[#111622] backdrop-blur-xl select-none z-20">
-      {/* Hidden File Input */}
+      {/* Category-Specific Selective Inputs */}
+      {/* 1. Documents (PDFs, Word docs, spreadsheets, slides, text) */}
       <input
-        ref={fileRef}
+        ref={documentInputRef}
         type="file"
         multiple
         className="hidden"
         onChange={handleFilePick}
-        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.txt"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf"
       />
+      {/* 2. Photos & Videos (Gallery) */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFilePick}
+        accept="image/*,video/*"
+      />
+      {/* 3. Camera Capture (Mobile/Webcam direct snapshot) */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFilePick}
+        accept="image/*"
+        capture="environment"
+      />
+      {/* 4. Audio files (Music, Voice recordings) */}
+      <input
+        ref={audioInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFilePick}
+        accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac"
+      />
+      {/* 5. Compressed Archives & Code */}
+      <input
+        ref={archiveInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFilePick}
+        accept=".zip,.rar,.7z,.tar,.gz,.json,.xml"
+      />
+      {/* 6. General fallback */}
+      <input
+        ref={generalFileRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFilePick}
+        accept="*/*"
+      />
+
+      {/* WhatsApp-Style Floating Attachment Sheet / Menu */}
+      <AnimatePresence>
+        {showAttachMenu && (
+          <motion.div
+            ref={attachMenuRef}
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="absolute bottom-full left-4 sm:left-6 mb-3 p-3.5 bg-card/95 dark:bg-[#161b26]/95 border border-border/80 rounded-3xl shadow-2xl backdrop-blur-xl z-40 w-72"
+          >
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/40 px-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                Share Content
+              </span>
+              <span className="text-[10px] text-muted-foreground">Up to 5 files</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Document Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachMenu(false);
+                  documentInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground">Document</span>
+              </button>
+
+              {/* Photos & Videos Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachMenu(false);
+                  galleryInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-600 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <Image className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground">Gallery</span>
+              </button>
+
+              {/* Camera Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachMenu(false);
+                  cameraInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground">Camera</span>
+              </button>
+
+              {/* Audio Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachMenu(false);
+                  audioInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <Headphones className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground">Audio</span>
+              </button>
+
+              {/* Archives / Zip Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachMenu(false);
+                  archiveInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <FolderArchive className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground">Archive</span>
+              </button>
+
+              {/* Any File Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachMenu(false);
+                  generalFileRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-zinc-600 to-zinc-800 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <Paperclip className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground">Browse</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Emoji Picker Popover */}
       <AnimatePresence>
@@ -323,19 +510,28 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
       {/* Main Luxury Input Container */}
       <div className="px-3 py-2.5 md:px-6 md:py-3">
         <div className="flex items-center gap-1.5 bg-muted/50 dark:bg-zinc-900/60 border border-border/70 rounded-2xl p-1.5 transition-all focus-within:ring-2 focus-within:ring-primary/25 shadow-xs">
-          {/* Attachment button */}
+          {/* WhatsApp-Style Attachment button with rotation on active */}
           <button
-            onClick={() => fileRef.current?.click()}
+            onClick={() => {
+              setShowAttachMenu(!showAttachMenu);
+              setShowEmojiPicker(false);
+            }}
             disabled={uploading}
-            className="shrink-0 rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors disabled:opacity-40 cursor-pointer"
-            title="Attach files (photos, audio, video, docs)"
+            className={cn(
+              "shrink-0 rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 cursor-pointer",
+              showAttachMenu ? "bg-muted text-primary rotate-45" : ""
+            )}
+            title="Attach documents, photos, audio, or files"
           >
             <Paperclip className="h-4 w-4" />
           </button>
 
           {/* Emoji button */}
           <button
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker);
+              setShowAttachMenu(false);
+            }}
             disabled={uploading}
             className="shrink-0 rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors disabled:opacity-40 cursor-pointer"
             title="Insert emoji"
@@ -408,3 +604,4 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
     </div>
   );
 }
+

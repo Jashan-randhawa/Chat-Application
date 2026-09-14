@@ -239,7 +239,7 @@ const leaveGroup = TryCatch(async (req, res, next) => {
 });
 
 const sendAttachments = TryCatch(async (req, res, next) => {
-  const { chatId } = req.body;
+  const { chatId, message: textMessage, caption } = req.body;
 
   const files = req.files || [];
 
@@ -251,7 +251,7 @@ const sendAttachments = TryCatch(async (req, res, next) => {
 
   const [chat, me] = await Promise.all([
     Chat.findById(chatId),
-    User.findById(req.user, "name"),
+    User.findById(req.user, "name username avatar"),
   ]);
 
   if (!chat) return next(new ErrorHandler("Chat not found", 404));
@@ -262,8 +262,10 @@ const sendAttachments = TryCatch(async (req, res, next) => {
   //   Upload files here
   const attachments = await uploadFilesToCloudinary(files);
 
+  const finalContent = (textMessage || caption || "").trim();
+
   const messageForDB = {
-    content: "",
+    content: finalContent,
     attachments,
     sender: me._id,
     chat: chatId,
