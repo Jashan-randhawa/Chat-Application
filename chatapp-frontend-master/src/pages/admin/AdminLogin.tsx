@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminLogin, getAdmin } from "@/services/api";
-import { saveToken } from "@/lib/token";
+import { saveAdminToken } from "@/lib/token";
 import { useAppStore } from "@/store/appStore";
 import { Shield, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
@@ -27,7 +27,7 @@ export default function AdminLogin() {
     setLoading(true);
     try {
       const { data } = await adminLogin(secretKey);
-      if (data.token) saveToken(data.token);
+      if (data.token) saveAdminToken(data.token);
       toast.success(data.message || "Welcome, Admin!");
       setIsAdmin(true);
     } catch (err: any) {

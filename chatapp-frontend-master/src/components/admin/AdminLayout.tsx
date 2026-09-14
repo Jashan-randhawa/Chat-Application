@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAppStore } from "@/store/appStore";
 import { adminLogout, getAdmin } from "@/services/api";
+import { clearAdminToken } from "@/lib/token";
 import {
   LayoutDashboard, Users, MessageSquare, MessagesSquare,
   LogOut, ArrowLeft, Shield, Menu, ChevronRight,
@@ -27,12 +28,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     getAdmin()
       .then(() => setIsAdmin(true))
-      .catch(() => { setIsAdmin(false); navigate("/admin"); });
+      .catch(() => {
+        clearAdminToken();
+        setIsAdmin(false);
+        navigate("/admin");
+      });
   }, []);
 
   const handleLogout = async () => {
-    try { await adminLogout(); toast.success("Logged out"); } catch {}
+    try {
+      await adminLogout();
+    } catch {}
+    clearAdminToken();
     setIsAdmin(false);
+    toast.success("Admin logged out successfully");
     navigate("/admin");
   };
 

@@ -36,11 +36,18 @@ const adminLogin = TryCatch(async (req, res, next) => {
 });
 
 const adminLogout = TryCatch(async (req, res, next) => {
+  res.clearCookie("chattu-admin-token", {
+    ...cookieOptions,
+    maxAge: 0,
+    path: "/",
+  });
+
   return res
     .status(200)
     .cookie("chattu-admin-token", "", {
       ...cookieOptions,
       maxAge: 0,
+      path: "/",
     })
     .json({
       success: true,

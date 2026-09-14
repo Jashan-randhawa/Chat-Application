@@ -115,7 +115,16 @@ app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/status", statusRoute);
 
 app.get("/", (req, res) => {
-  res.send("Hello World");
+  res.json({
+    status: "online",
+    name: "Emerald Chat Server API",
+    version: "1.0.0",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy", uptime: process.uptime() });
 });
 
 io.use((socket, next) => {

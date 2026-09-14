@@ -32,3 +32,18 @@ export const clearAll = () => {
   clearToken();
   clearUser();
 };
+
+// ── Admin Token Storage ──
+const ADMIN_TOKEN_KEY = "chatapp-admin-token";
+
+export const saveAdminToken = (token: string) => {
+  try { localStorage.setItem(ADMIN_TOKEN_KEY, token); } catch { }
+};
+
+export const getAdminToken = (): string | null => {
+  try { return localStorage.getItem(ADMIN_TOKEN_KEY); } catch { return null; }
+};
+
+export const clearAdminToken = () => {
+  try { localStorage.removeItem(ADMIN_TOKEN_KEY); } catch { }
+};

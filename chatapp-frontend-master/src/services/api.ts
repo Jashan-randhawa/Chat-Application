@@ -1,6 +1,6 @@
 import axios from "axios";
 import { server } from "@/config/constants";
-import { getToken, clearAll } from "@/lib/token";
+import { getToken, clearAll, getAdminToken, clearAdminToken } from "@/lib/token";
 
 const api = axios.create({
   baseURL: `${server}/api/v1`,
@@ -10,7 +10,8 @@ const api = axios.create({
 
 // Attach Bearer token to every request if available
 api.interceptors.request.use((config) => {
-  const token = getToken();
+  const isAdminUrl = config.url?.startsWith("/admin");
+  const token = isAdminUrl ? (getAdminToken() || getToken()) : getToken();
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
@@ -25,13 +26,23 @@ api.interceptors.response.use(
       const isAuthRoute =
         error.config?.url?.includes("/user/login") ||
         error.config?.url?.includes("/user/new") ||
-        error.config?.url?.includes("/admin/verify");
+        error.config?.url?.includes("/admin/verify") ||
+        error.config?.url?.includes("/admin/logout");
+      const isAdminRoute = error.config?.url?.startsWith("/admin");
+
       if (!isAuthRoute) {
-        clearAll();
-        // Only redirect if not already on login
-        if (!window.location.pathname.includes("/login") &&
-            !window.location.pathname.includes("/admin")) {
-          window.location.href = "/login";
+        if (isAdminRoute) {
+          clearAdminToken();
+          if (!window.location.pathname.includes("/admin")) {
+            window.location.href = "/admin";
+          }
+        } else {
+          clearAll();
+          // Only redirect if not already on login
+          if (!window.location.pathname.includes("/login") &&
+              !window.location.pathname.includes("/admin")) {
+            window.location.href = "/login";
+          }
         }
       }
     }
