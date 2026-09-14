@@ -9,6 +9,7 @@ import {
   getDashboardStats,
   deleteUserByAdmin,
   deleteMessageByAdmin,
+  deleteChatByAdmin,
 } from "../controllers/admin.js";
 import { adminLoginValidator, validateHandler } from "../lib/validators.js";
 import { adminOnly } from "../middlewares/auth.js";
@@ -29,6 +30,7 @@ app.get("/users", allUsers);
 app.delete("/users/:id", deleteUserByAdmin);
 
 app.get("/chats", allChats);
+app.delete("/chats/:id", deleteChatByAdmin);
 
 app.get("/messages", allMessages);
 app.delete("/messages/:id", deleteMessageByAdmin);

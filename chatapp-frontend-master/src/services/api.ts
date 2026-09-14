@@ -117,6 +117,8 @@ export const adminDeleteUser = (id: string) => api.delete(`/admin/users/${id}`);
 
 export const adminDeleteMessage = (id: string) => api.delete(`/admin/messages/${id}`);
 
+export const adminDeleteChat = (id: string) => api.delete(`/admin/chats/${id}`);
+
 // ── Status ──
 export const getFriendsStatuses = () => api.get("/status");
 

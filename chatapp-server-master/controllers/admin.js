@@ -299,6 +299,36 @@ const deleteMessageByAdmin = TryCatch(async (req, res, next) => {
   });
 });
 
+const deleteChatByAdmin = TryCatch(async (req, res, next) => {
+  const { id } = req.params;
+
+  const chat = await Chat.findById(id);
+  if (!chat) return next(new ErrorHandler("Chat not found", 404));
+
+  const messagesWithAttachments = await Message.find({
+    chat: id,
+    attachments: { $exists: true, $ne: [] },
+  });
+
+  const public_ids = [];
+  messagesWithAttachments.forEach(({ attachments }) =>
+    attachments.forEach(({ public_id }) => {
+      if (public_id) public_ids.push(public_id);
+    })
+  );
+
+  if (public_ids.length > 0) {
+    await deletFilesFromCloudinary(public_ids);
+  }
+
+  await Promise.all([chat.deleteOne(), Message.deleteMany({ chat: id })]);
+
+  return res.status(200).json({
+    success: true,
+    message: "Chat deleted by Admin",
+  });
+});
+
 export {
   allUsers,
   allChats,
@@ -306,7 +336,9 @@ export {
   getDashboardStats,
   deleteUserByAdmin,
   deleteMessageByAdmin,
+  deleteChatByAdmin,
   adminLogin,
   adminLogout,
   getAdminData,
 };
+
