@@ -18,6 +18,7 @@ import {
   Camera,
   Headphones,
   FolderArchive,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fileFormat } from "@/lib/features";
@@ -295,7 +296,7 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
         accept="*/*"
       />
 
-      {/* WhatsApp-Style Floating Attachment Sheet / Menu */}
+      {/* WhatsApp-Style Floating Attachment Sheet / Menu (List Manner View) */}
       <AnimatePresence>
         {showAttachMenu && (
           <motion.div
@@ -304,16 +305,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute bottom-full left-4 sm:left-6 mb-3 p-3.5 bg-card/95 dark:bg-[#161b26]/95 border border-border/80 rounded-3xl shadow-2xl backdrop-blur-xl z-40 w-72"
+            className="absolute bottom-full left-4 sm:left-6 mb-3 bg-card/95 dark:bg-[#161b26]/95 border border-border/80 rounded-3xl shadow-2xl backdrop-blur-xl z-40 w-72 overflow-hidden p-2"
           >
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/40 px-1">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                Share Content
+                Send Attachments
               </span>
-              <span className="text-[10px] text-muted-foreground">Up to 5 files</span>
+              <span className="text-[10px] text-muted-foreground">Max 5 files</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="flex flex-col gap-1 pt-1.5">
               {/* Document Option */}
               <button
                 type="button"
@@ -321,12 +322,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
                   setShowAttachMenu(false);
                   documentInputRef.current?.click();
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-muted/80 transition-all text-left group cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
                   <FileText className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-foreground">Document</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Document</p>
+                  <p className="text-[10px] text-muted-foreground truncate">PDF, Word, Excel, TXT, Slides</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
 
               {/* Photos & Videos Option */}
@@ -336,12 +341,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
                   setShowAttachMenu(false);
                   galleryInputRef.current?.click();
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-muted/80 transition-all text-left group cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-600 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
                   <Image className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-foreground">Gallery</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Photos & Videos</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Images, clips, GIFs from gallery</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
 
               {/* Camera Option */}
@@ -351,12 +360,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
                   setShowAttachMenu(false);
                   cameraInputRef.current?.click();
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-muted/80 transition-all text-left group cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
                   <Camera className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-foreground">Camera</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Camera</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Take a photo directly</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
 
               {/* Audio Option */}
@@ -366,12 +379,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
                   setShowAttachMenu(false);
                   audioInputRef.current?.click();
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-muted/80 transition-all text-left group cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
                   <Headphones className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-foreground">Audio</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Audio & Music</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Audio tracks, MP3, recordings</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
 
               {/* Archives / Zip Option */}
@@ -381,12 +398,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
                   setShowAttachMenu(false);
                   archiveInputRef.current?.click();
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-muted/80 transition-all text-left group cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
                   <FolderArchive className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-foreground">Archive</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Archive & Code</p>
+                  <p className="text-[10px] text-muted-foreground truncate">ZIP, RAR, 7Z, JSON files</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
 
               {/* Any File Option */}
@@ -396,12 +417,16 @@ export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
                   setShowAttachMenu(false);
                   generalFileRef.current?.click();
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-muted/70 transition-all group cursor-pointer"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-muted/80 transition-all text-left group cursor-pointer"
               >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-zinc-600 to-zinc-800 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-zinc-600 to-zinc-800 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
                   <Paperclip className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-foreground">Browse</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Other Files</p>
+                  <p className="text-[10px] text-muted-foreground truncate">Browse device storage</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
             </div>
           </motion.div>
