@@ -133,7 +133,7 @@ export function analyzeContent(content = "", attachments = []) {
       categories.add("Inappropriate Content");
       matchedPatterns.push(phrase);
       severity = "high";
-      inappropriateScore += 50;
+      inappropriateScore += 80;
       reasons.push(`High-severity hate speech or threat detected: "${phrase}"`);
     }
   }
