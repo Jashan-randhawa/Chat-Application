@@ -1,242 +1,135 @@
-# 💬 Chat Application
+# 💎 Emerald Chat
 
-A full-stack, real-time chat application built with React + TypeScript on the frontend and Node.js + Express on the backend. Supports private messaging, group chats, voice messages, status updates, video/audio calls, and an admin dashboard.
-
-🚀 **Live Demo**: [https://chat-application-five-kappa.vercel.app/](https://chat-application-five-kappa.vercel.app/)
+> **Modern, Executive Real-Time Messaging & Encrypted Collaboration Platform**  
+> Engineered with React 18, TypeScript, Tailwind CSS, Node.js, Express, Socket.io, and WebRTC. Styled in **Imperial Emerald**.
 
 ---
 
-## ✨ Features
+## 🌟 Highlights
 
-- 🔐 **JWT Authentication** — Secure login/signup with token-based auth
-- 💬 **Real-Time Messaging** — Instant messaging via Socket.io
-- 👥 **Group Chats** — Create and manage group conversations
-- 🎙️ **Voice Messages** — Record and send audio messages
-- 📸 **Status Updates** — Share photo/video statuses (WhatsApp-style)
-- 📞 **Voice & Video Calls** — In-app calling via WebRTC
-- 🌐 **Media Uploads** — Image and file sharing via Cloudinary
-- 🛡️ **Admin Dashboard** — Manage users, chats, and messages
-- 🌗 **Dark / Light Mode** — Theme support via `next-themes`
-- 📱 **Responsive UI** — Works on desktop and mobile
+- **💎 Imperial Emerald Design System** — Tailored luxury emerald palette (`#10b981`), glassmorphism, responsive navigation rail, and dark/light modes.
+- **⚡ Real-Time Messaging Mesh** — Sub-millisecond WebSocket communication powered by Socket.io, online presence tracking, typing indicators, and read receipts.
+- **📎 WhatsApp-Style Selective Media & Document Sharing** — Multi-file selective document preview, list-manner inspection, custom captions, and Cloudinary media processing.
+- **🛡️ Automated Content Moderation & Spam Engine** — Zero-API-key heuristics with `leo-profanity` & `glin-profanity` for leetspeak/obfuscation, crypto scams, phishing links, and cross-message burst/duplicate flood detection.
+- **📞 Peer-to-Peer Calls** — Real-time audio and video calling powered by WebRTC mesh signaling.
+- **📸 24-Hour Stories / Status** — Rich text and multimedia status sharing with auto-expiration and viewed indicators.
+- **🔒 Admin Control Center** — Comprehensive admin portal with security telemetry, live content safety scoring, user dossiers, channel inspection, and 1-click message purge.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend (`chatapp-frontend-master/`)
+### Frontend (`chatapp-frontend-master`)
+- **Framework**: React 18 + Vite + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui + Lucide Icons + Framer Motion
+- **State**: Zustand (`appStore`)
+- **Networking**: Axios + Socket.io Client
+- **Charts**: Chart.js + React-Chartjs-2
+- **Testing**: Vitest
 
-| Technology | Purpose |
-|---|---|
-| React 18 + TypeScript | UI framework |
-| Vite | Build tool |
-| Tailwind CSS + shadcn/ui | Styling & UI components |
-| Zustand | Global state management |
-| Socket.io-client | Real-time communication |
-| Axios | HTTP requests |
-| Framer Motion | Animations |
-| React Router v6 | Client-side routing |
-| React Hook Form + Zod | Forms & validation |
-| TanStack Query | Server state & caching |
-| Recharts / Chart.js | Admin analytics charts |
-
-### Backend (`chatapp-server-master/`)
-
-| Technology | Purpose |
-|---|---|
-| Node.js + Express | Server framework |
-| MongoDB + Mongoose | Database & ODM |
-| Socket.io | Real-time WebSocket server |
-| JWT | Authentication |
-| Cloudinary | Media file storage |
-| Multer | File upload middleware |
+### Backend (`chatapp-server-master`)
+- **Runtime**: Node.js (ESM) + Express
+- **Database**: MongoDB + Mongoose
+- **Real-Time**: Socket.io Server
+- **Security & Auth**: JWT (HS256) + bcrypt + Helmet + Express Rate Limit
+- **Moderation**: `leo-profanity` + `glin-profanity` + Custom Token Deobfuscator
+- **Storage**: Cloudinary + Multer
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Layout
 
 ```
-Chat-Application-main/
-├── chatapp-frontend-master/       # React frontend
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── chat/              # ChatArea, Sidebar, MessageBubble, ChatInput, etc.
-│   │   │   ├── status/            # StatusList, StatusViewer, AddStatusModal
-│   │   │   ├── admin/             # AdminLayout
-│   │   │   └── ui/                # shadcn/ui base components
-│   │   ├── pages/
-│   │   │   ├── Index.tsx          # Main chat page
-│   │   │   ├── Login.tsx          # Auth page
-│   │   │   ├── Groups.tsx         # Group chats
-│   │   │   └── admin/             # Dashboard, UserMgmt, ChatMgmt, MessageMgmt
-│   │   ├── context/
-│   │   │   └── SocketContext.tsx  # Socket.io provider
-│   │   ├── store/
-│   │   │   └── appStore.ts        # Zustand global store
-│   │   └── App.tsx                # Routes & protected routes
-│   ├── public/
-│   └── package.json
+Chat-Application/
+├── chatapp-frontend-master/     # React 18 + Vite client
+│   ├── public/                  # Emerald logo.svg & favicon.svg
+│   └── src/
+│       ├── components/          # AppLogo, ChatArea, Sidebar, AdminLayout
+│       ├── pages/               # Index, Login, Groups, Admin (Dashboard, Messages, Users, Chats)
+│       ├── store/               # Zustand state store
+│       └── services/            # Axios API endpoints
 │
-├── chatapp-server-master/         # Node.js backend
-│   ├── controllers/
-│   │   ├── user.js                # Auth & user endpoints
-│   │   ├── chat.js                # Chat & message logic
-│   │   ├── status.js              # Status updates
-│   │   └── admin.js               # Admin endpoints
-│   ├── models/                    # Mongoose schemas
-│   ├── middlewares/
-│   │   ├── auth.js                # JWT middleware
-│   │   ├── multer.js              # File upload middleware
-│   │   └── error.js               # Error handler
-│   ├── constants/
-│   │   ├── config.js              # App config
-│   │   └── events.js              # Socket event names
-│   ├── lib/
-│   │   ├── helper.js
-│   │   └── validators.js
-│   └── app.js                     # Express app entry point
-│
-└── vercel.json                    # Vercel deployment config
+└── chatapp-server-master/       # Express + Socket.io backend
+    ├── controllers/             # chat.js, user.js, admin.js, status.js
+    ├── utils/                   # moderation.js (spam heuristics & flood engine)
+    ├── middlewares/             # auth.js, error.js, multer.js
+    ├── models/                  # User, Message, Chat, Request, Status
+    └── app.js                   # Server entrypoint & WebSocket handler
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
-
-- Node.js v18+
-- MongoDB (Atlas or local)
-- Cloudinary account
-
----
-
-### Backend Setup
+### 1. Backend Setup
 
 ```bash
 cd chatapp-server-master
 npm install
 ```
 
-Create a `.env` file:
+Create `.env` in `chatapp-server-master/`:
 
 ```env
+PORT=3000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
 MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-ADMIN_SECRET_KEY=your_admin_secret_key
+JWT_SECRET=your_super_secret_jwt_key
+ADMIN_SECRET_KEY=your_admin_master_secret
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-CLIENT_URL=http://localhost:5173
-NODE_ENV=development
-PORT=3000
 ```
 
 Start the server:
-
 ```bash
 npm start
 ```
 
-The backend will be running at `http://localhost:3000`.
-
----
-
-### Frontend Setup
+### 2. Frontend Setup
 
 ```bash
 cd chatapp-frontend-master
 npm install
 ```
 
-Create a `.env` file:
+Create `.env` in `chatapp-frontend-master/`:
 
 ```env
 VITE_SERVER=http://localhost:3000
 ```
 
-Start the development server:
-
+Start the frontend development server:
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
+Visit `http://localhost:5173` to launch **Emerald Chat**.
 
 ---
 
-## 📜 Available Scripts
+## 🛡️ Content Moderation & Security Engine
 
-### Frontend
+The server includes an automated moderation engine ([`utils/moderation.js`](chatapp-server-master/utils/moderation.js)):
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
-| `npm run test` | Run unit tests (Vitest) |
-
-### Backend
-
-| Command | Description |
-|---|---|
-| `npm start` | Start the server |
+1. **Abusive Language & Profanity**: Dual-engine detection via `leo-profanity` and `glin-profanity`, combined with single-letter token deobfuscation (`f.u.c.k` / `f u c k` $\to$ `fuck`).
+2. **Threats & Hate Speech**: Immediate high-severity escalation for critical threat phrases.
+3. **Spam & Phishing**: Filters crypto giveaways, investment scams, and suspicious URL shorteners (`bit.ly`, `tinyurl.com`, `.xyz`, etc.).
+4. **Flood Pattern Detection**:
+   - **Duplicate Message Flood**: Flags senders posting the same message $\ge 3$ times within 60s.
+   - **Burst Rate Flood**: Flags senders sending $\ge 8$ messages within 60s.
+5. **Admin Moderation Queue**: 1-click filtering (`Flagged`, `Spam`, `Inappropriate`) and immediate message/media deletion from MongoDB and Cloudinary.
 
 ---
 
-## ☁️ Deployment
+## 📦 Production Deployment
 
-### Frontend → Vercel
-
-1. Push the `chatapp-frontend-master/` folder to GitHub
-2. Import the repo into [Vercel](https://vercel.com)
-3. Set the environment variable:
-   ```
-   VITE_SERVER=https://your-backend-url.onrender.com
-   ```
-4. Deploy
-
-### Backend → Render
-
-1. Push `chatapp-server-master/` to GitHub
-2. Create a new **Web Service** on [Render](https://render.com)
-3. Set all `.env` variables in Render's environment settings
-4. Set start command to `npm start`
-
----
-
-## 🔌 Key Socket Events
-
-| Event | Direction | Description |
-|---|---|---|
-| `NEW_MESSAGE` | Server → Client | New message received |
-| `NEW_MESSAGE_ALERT` | Server → Client | Notification for new message |
-| `REFETCH_CHATS` | Server → Client | Refresh chat list |
-| `ONLINE_USERS` | Server → Client | List of online users |
-| `START_TYPING` | Client → Server | User started typing |
-| `STOP_TYPING` | Client → Server | User stopped typing |
-
----
-
-## 🛡️ Admin Panel
-
-Access the admin dashboard at `/admin`. Features include:
-
-- View all users and their activity
-- Monitor all chats and conversations
-- Manage messages
-- Analytics charts
+- **Frontend (Vercel)**: Import `chatapp-frontend-master/`, set `VITE_SERVER=https://your-backend.onrender.com`.
+- **Backend (Render)**: Deploy `chatapp-server-master/` as a Node Web Service, set `.env` variables, and build with `npm install && npm start`.
 
 ---
 
 ## 📄 License
 
-This project is open-source and available for personal and educational use.
-
----
-
-## 🙌 Acknowledgements
-
-- [shadcn/ui](https://ui.shadcn.com/) for the beautiful UI components
-- [Socket.io](https://socket.io/) for real-time capabilities
-- [Cloudinary](https://cloudinary.com/) for media management
+This project is licensed under the MIT License — open for personal and commercial development.
