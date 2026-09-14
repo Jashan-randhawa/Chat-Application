@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGetStats } from "@/services/api";
 import {
@@ -17,6 +18,9 @@ import {
   Cpu,
   Clock,
   Zap,
+  ShieldAlert,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import {
@@ -56,6 +60,10 @@ interface Stats {
   pendingRequestsCount: number;
   activeStatusesCount: number;
   messagesWithMediaCount: number;
+  flaggedMessagesCount?: number;
+  spamAlertsCount?: number;
+  inappropriateAlertsCount?: number;
+  highSeverityAlertsCount?: number;
   messagesChart: number[];
   usersChart: number[];
   serverUptime: number;
@@ -116,6 +124,7 @@ const statCards = (s: Stats) => [
 ];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -182,6 +191,79 @@ export default function Dashboard() {
           </motion.div>
         ))}
       </div>
+
+      {/* Content Moderation & Spam Detection Security Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className={`border rounded-xl p-4 mb-6 transition-all ${
+          (stats?.flaggedMessagesCount ?? 0) > 0
+            ? "bg-gradient-to-r from-red-950/30 via-amber-950/20 to-[#161b22] border-red-500/30 shadow-lg shadow-red-500/5"
+            : "bg-[#161b22] border-emerald-500/20"
+        }`}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                (stats?.flaggedMessagesCount ?? 0) > 0
+                  ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                  : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+              }`}
+            >
+              {(stats?.flaggedMessagesCount ?? 0) > 0 ? (
+                <ShieldAlert className="w-5 h-5" />
+              ) : (
+                <ShieldCheck className="w-5 h-5" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">Content Moderation & Threat Detection</h3>
+                {(stats?.highSeverityAlertsCount ?? 0) > 0 ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
+                    Action Required
+                  </span>
+                ) : (stats?.flaggedMessagesCount ?? 0) > 0 ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">
+                    Review Pending
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    All Messages Clean
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-white/40 mt-0.5">
+                Automated heuristics actively screening messages for spam links, scams, harassment, and abusive language.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center">
+              <span className="text-[10px] text-white/40 block">Flagged Total</span>
+              <span className="text-sm font-bold text-red-400">{stats?.flaggedMessagesCount ?? 0}</span>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center">
+              <span className="text-[10px] text-white/40 block">Spam Signals</span>
+              <span className="text-sm font-bold text-amber-400">{stats?.spamAlertsCount ?? 0}</span>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center">
+              <span className="text-[10px] text-white/40 block">Inappropriate</span>
+              <span className="text-sm font-bold text-rose-400">{stats?.inappropriateAlertsCount ?? 0}</span>
+            </div>
+            <button
+              onClick={() => navigate("/admin/messages?filter=flagged")}
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all ml-auto md:ml-2 cursor-pointer"
+            >
+              <span>Review Log</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -8,6 +8,7 @@ import { Status } from "../models/status.js";
 import { ErrorHandler } from "../utils/utility.js";
 import { cookieOptions, deletFilesFromCloudinary } from "../utils/features.js";
 import { adminSecretKey, onlineUsers } from "../app.js";
+import { analyzeContent } from "../utils/moderation.js";
 
 const adminLogin = TryCatch(async (req, res, next) => {
   const { secretKey } = req.body;
@@ -137,21 +138,25 @@ const allMessages = TryCatch(async (req, res) => {
     .populate("chat", "groupChat name");
 
   const transformedMessages = messages.map(
-    ({ content, attachments, _id, sender, createdAt, chat }) => ({
-      _id,
-      attachments: attachments || [],
-      content: content || "",
-      createdAt,
-      chat: chat?._id || "",
-      chatName: chat?.name || "",
-      groupChat: chat?.groupChat ?? false,
-      sender: {
-        _id: sender?._id || "",
-        name: sender?.name || "Deleted User",
-        username: sender?.username || "",
-        avatar: sender?.avatar?.url || "",
-      },
-    })
+    ({ content, attachments, _id, sender, createdAt, chat }) => {
+      const moderation = analyzeContent(content || "", attachments || []);
+      return {
+        _id,
+        attachments: attachments || [],
+        content: content || "",
+        createdAt,
+        chat: chat?._id || "",
+        chatName: chat?.name || "",
+        groupChat: chat?.groupChat ?? false,
+        sender: {
+          _id: sender?._id || "",
+          name: sender?.name || "Deleted User",
+          username: sender?.username || "",
+          avatar: sender?.avatar?.url || "",
+        },
+        moderation,
+      };
+    }
   );
 
   return res.status(200).json({
@@ -179,7 +184,29 @@ const getDashboardStats = TryCatch(async (req, res) => {
     Request.countDocuments({ status: "pending" }),
     Status.countDocuments({ expiresAt: { $gt: new Date() } }),
     Message.countDocuments({ attachments: { $exists: true, $ne: [] } }),
+    Message.find({}).sort({ createdAt: -1 }).limit(1000).select("content attachments"),
   ]);
+
+  let flaggedMessagesCount = 0;
+  let spamAlertsCount = 0;
+  let inappropriateAlertsCount = 0;
+  let highSeverityAlertsCount = 0;
+
+  recentMessagesForMod.forEach((msg) => {
+    const mod = analyzeContent(msg.content, msg.attachments);
+    if (mod.isFlagged) {
+      flaggedMessagesCount++;
+      if (mod.categories.includes("Spam & Scam") || mod.categories.includes("Suspicious Link")) {
+        spamAlertsCount++;
+      }
+      if (mod.categories.includes("Inappropriate Content")) {
+        inappropriateAlertsCount++;
+      }
+      if (mod.severity === "high") {
+        highSeverityAlertsCount++;
+      }
+    }
+  });
 
   const onlineUsersCount = onlineUsers ? onlineUsers.size : 0;
 
@@ -225,6 +252,10 @@ const getDashboardStats = TryCatch(async (req, res) => {
     pendingRequestsCount,
     activeStatusesCount,
     messagesWithMediaCount,
+    flaggedMessagesCount,
+    spamAlertsCount,
+    inappropriateAlertsCount,
+    highSeverityAlertsCount,
     messagesChart,
     usersChart,
     serverUptime: Math.floor(process.uptime()),
