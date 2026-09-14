@@ -197,16 +197,16 @@ export default function Dashboard() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
-        className={`border rounded-xl p-4 mb-6 transition-all ${
+        className={`border rounded-2xl p-5 mb-6 transition-all ${
           (stats?.flaggedMessagesCount ?? 0) > 0
             ? "bg-gradient-to-r from-red-950/30 via-amber-950/20 to-[#161b22] border-red-500/30 shadow-lg shadow-red-500/5"
             : "bg-[#161b22] border-emerald-500/20"
         }`}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex items-start sm:items-center gap-3.5">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 (stats?.flaggedMessagesCount ?? 0) > 0
                   ? "bg-red-500/20 text-red-400 border border-red-500/30"
                   : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
@@ -219,44 +219,47 @@ export default function Dashboard() {
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Content Moderation & Threat Detection</h3>
                 {(stats?.highSeverityAlertsCount ?? 0) > 0 ? (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
                     Action Required
                   </span>
                 ) : (stats?.flaggedMessagesCount ?? 0) > 0 ? (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">
                     Review Pending
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     All Messages Clean
                   </span>
                 )}
               </div>
-              <p className="text-xs text-white/40 mt-0.5">
+              <p className="text-xs text-white/50 mt-1 max-w-xl leading-relaxed">
                 Automated heuristics actively screening messages for spam links, scams, harassment, and abusive language.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center">
-              <span className="text-[10px] text-white/40 block">Flagged Total</span>
-              <span className="text-sm font-bold text-red-400">{stats?.flaggedMessagesCount ?? 0}</span>
+          <div className="flex flex-wrap items-center gap-3 pt-2 lg:pt-0 border-t border-white/5 lg:border-t-0">
+            <div className="grid grid-cols-3 gap-2 flex-1 sm:flex-initial">
+              <div className="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-center min-w-[85px]">
+                <span className="text-[10px] text-white/40 block">Flagged Total</span>
+                <span className="text-base font-bold text-red-400">{stats?.flaggedMessagesCount ?? 0}</span>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-center min-w-[85px]">
+                <span className="text-[10px] text-white/40 block">Spam Signals</span>
+                <span className="text-base font-bold text-amber-400">{stats?.spamAlertsCount ?? 0}</span>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-center min-w-[85px]">
+                <span className="text-[10px] text-white/40 block">Inappropriate</span>
+                <span className="text-base font-bold text-rose-400">{stats?.inappropriateAlertsCount ?? 0}</span>
+              </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center">
-              <span className="text-[10px] text-white/40 block">Spam Signals</span>
-              <span className="text-sm font-bold text-amber-400">{stats?.spamAlertsCount ?? 0}</span>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center">
-              <span className="text-[10px] text-white/40 block">Inappropriate</span>
-              <span className="text-sm font-bold text-rose-400">{stats?.inappropriateAlertsCount ?? 0}</span>
-            </div>
+
             <button
               onClick={() => navigate("/admin/messages?filter=flagged")}
-              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-semibold text-white flex items-center gap-1.5 transition-all ml-auto md:ml-2 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md"
             >
               <span>Review Log</span>
               <ArrowRight className="w-3.5 h-3.5" />
