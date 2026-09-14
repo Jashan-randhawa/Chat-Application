@@ -284,6 +284,42 @@ const getMyFriends = TryCatch(async (req, res, next) => {
   }
 });
 
+const updateProfile = TryCatch(async (req, res, next) => {
+  const { name, bio } = req.body;
+  const file = req.file;
+
+  const user = await User.findById(req.user);
+  if (!user) return next(new ErrorHandler("User not found", 404));
+
+  if (name && typeof name === "string" && name.trim()) {
+    user.name = name.trim();
+  }
+
+  if (typeof bio === "string") {
+    user.bio = bio.trim();
+  }
+
+  if (file) {
+    const result = await uploadFilesToCloudinary([file]);
+    // Delete old avatar from Cloudinary if exists
+    if (user.avatar?.public_id) {
+      await deletFilesFromCloudinary([user.avatar.public_id]);
+    }
+    user.avatar = {
+      public_id: result[0].public_id,
+      url: result[0].url,
+    };
+  }
+
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    user,
+  });
+});
+
 export {
   acceptFriendRequest,
   getMyFriends,
@@ -294,4 +330,5 @@ export {
   newUser,
   searchUser,
   sendFriendRequest,
+  updateProfile,
 };

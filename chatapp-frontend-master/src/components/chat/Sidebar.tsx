@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LUXURY_PALETTES } from "@/config/palette";
 import AppLogo from "@/components/common/AppLogo";
+import ProfileModal from "./ProfileModal";
 
 type PanelType = "chats" | "notifications" | "groups" | "friends" | "search" | "status" | null;
 
@@ -67,6 +68,7 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
   const [searchQuery, setSearchQuery] = useState("");
   const [unseenStatusCount, setUnseenStatusCount] = useState(0);
   const [chatPreviews, setChatPreviews] = useState<Record<string, ChatPreview>>({});
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const socket = useSocket();
 
@@ -439,10 +441,16 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
           <AppLogo size="sm" showWordmark={false} glow={true} />
         </div>
 
-        {/* Avatar at top */}
-        <div className="mb-2">
+        {/* User Profile Avatar at top (Click to view and edit profile) */}
+        <button
+          type="button"
+          onClick={() => setProfileOpen(true)}
+          className="mb-2 rounded-full relative group cursor-pointer ring-2 ring-primary/30 hover:ring-primary transition-all p-0.5"
+          title="View & Edit Profile"
+        >
           <ChatAvatar name={user?.name || "User"} src={user?.avatar?.url} size="sm" />
-        </div>
+          <span className="sr-only">Open Profile</span>
+        </button>
 
         {navItems.map((item) => (
           <button
@@ -510,11 +518,19 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
               <Shield className="w-4 h-4" />
             </button>
             <div className="ml-1 pl-1 border-l border-border/60 flex items-center gap-1.5">
-              <ChatAvatar name={user?.name || "User"} src={user?.avatar?.url} size="xs" />
+              <button
+                type="button"
+                onClick={() => setProfileOpen(true)}
+                className="rounded-full ring-2 ring-primary/30 hover:ring-primary transition-all p-0.5 cursor-pointer"
+                title="View & Edit Profile"
+              >
+                <ChatAvatar name={user?.name || "User"} src={user?.avatar?.url} size="xs" />
+                <span className="sr-only">Open Profile</span>
+              </button>
               <button
                 onClick={handleLogout}
                 title="Logout"
-                className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors"
+                className="p-1 rounded-lg text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -1134,6 +1150,12 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
           onToggleMute={toggleMute}
         />
       )}
+
+      {/* User Profile View & Edit Modal */}
+      <ProfileModal
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+      />
     </div>
   );
 }

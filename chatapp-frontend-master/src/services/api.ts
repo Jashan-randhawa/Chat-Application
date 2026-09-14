@@ -59,6 +59,9 @@ export const registerUser = (formData: FormData) =>
 
 export const getMyProfile = () => api.get("/user/me");
 
+export const updateMyProfile = (formData: FormData) =>
+  api.put("/user/profile", formData, { headers: { "Content-Type": "multipart/form-data" } });
+
 export const logoutUser = () => api.get("/user/logout");
 
 // ── Users ──
