@@ -24,7 +24,7 @@ describe("Components import and evaluation", () => {
   it("should render ChatArea with messages without throwing", () => {
     useAppStore.setState({
       user: { _id: "u1", name: "Jashan", username: "jashan" },
-      palette: "violet",
+      palette: "emerald",
     });
 
     const mockChat = {

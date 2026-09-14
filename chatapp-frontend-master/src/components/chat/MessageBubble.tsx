@@ -271,7 +271,7 @@ function MessageStatusIndicator({ message, isSelf }: { message: Message; isSelf:
 
 export default function MessageBubble({ message, isSelf, showName, onReply }: Props) {
   const { palette } = useAppStore();
-  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.emerald;
   const isRead = !!(message.readBy && message.readBy.length > 0);
   const isDelivered = !!(message.deliveredTo && message.deliveredTo.length > 0);
 

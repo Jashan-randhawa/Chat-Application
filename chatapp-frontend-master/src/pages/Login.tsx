@@ -128,8 +128,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setUser, palette, setPalette } = useAppStore();
-  const activeTheme = PALETTES[palette] || PALETTES.violet;
+  const { setUser, palette } = useAppStore();
+  const activeTheme = PALETTES[palette] || PALETTES.emerald;
 
   // Form states
   const [username, setUsername] = useState("");
@@ -310,33 +310,6 @@ export default function Login() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            {/* Interactive Palette Selector */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-card/80 border border-border/80 shadow-xs">
-              <Palette className="w-3.5 h-3.5 ml-1 text-muted-foreground hidden sm:inline-block" />
-              {(Object.keys(PALETTES) as PaletteKey[]).map((key) => {
-                const p = PALETTES[key];
-                const isSelected = palette === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => {
-                      setPalette(key);
-                      localStorage.setItem("chatapp-palette", key);
-                    }}
-                    title={`Palette: ${p.name}`}
-                    aria-label={`Select ${p.name} palette`}
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-accent/40 ring-1 ring-border shadow-xs scale-105"
-                        : "opacity-60 hover:opacity-100 hover:bg-muted/40"
-                    }`}
-                  >
-                    <span className={`w-3 h-3 rounded-full ${p.dotColor} ${isSelected ? "ring-2 ring-white/50" : ""}`} />
-                  </button>
-                );
-              })}
-            </div>
 
             <button
               type="button"

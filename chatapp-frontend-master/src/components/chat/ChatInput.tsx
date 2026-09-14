@@ -62,7 +62,7 @@ const COMMON_EMOJIS = [
 export default function ChatInput({ chatId, replyTo, onCancelReply }: Props) {
   const socket = useSocket();
   const { palette } = useAppStore();
-  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.emerald;
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);

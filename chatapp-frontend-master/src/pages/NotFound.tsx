@@ -9,7 +9,7 @@ export default function NotFound() {
   const location = useLocation();
   const navigate = useNavigate();
   const { palette } = useAppStore();
-  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.emerald;
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);

@@ -99,7 +99,7 @@ export const LUXURY_PALETTES: Record<PaletteKey, PaletteTheme> = {
   },
 };
 
-export const DEFAULT_PALETTE: PaletteKey = "violet";
+export const DEFAULT_PALETTE: PaletteKey = "emerald";
 
 export function getStoredPalette(): PaletteKey {
   try {

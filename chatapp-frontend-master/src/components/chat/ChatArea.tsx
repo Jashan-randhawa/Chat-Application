@@ -71,7 +71,7 @@ function formatMessageDay(dateStr: string): string {
 export default function ChatArea({ chatId, chats, onBack, onRefreshChats }: Props) {
   const socket = useSocket();
   const { user, onlineUsers, removeNewMessagesAlert, palette } = useAppStore();
-  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.emerald;
 
   // Scroll refs
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -34,7 +34,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { LUXURY_PALETTES } from "@/config/palette";
-import PaletteSwitcher from "@/components/PaletteSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Group {
@@ -55,7 +54,7 @@ interface Member {
 export default function Groups() {
   const navigate = useNavigate();
   const { user, palette, onlineUsers } = useAppStore();
-  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.emerald;
 
   const [searchParams, setSearchParams] = useSearchParams();
   const chatId = searchParams.get("group");
@@ -313,7 +312,6 @@ export default function Groups() {
             <span>New Group</span>
           </button>
           <div className="h-4 w-px bg-border/80 mx-1" />
-          <PaletteSwitcher compact align="right" />
           <ThemeToggle />
         </div>
       </header>

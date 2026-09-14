@@ -22,7 +22,6 @@ import { parseReplyMessage } from "@/lib/replyUtils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import PaletteSwitcher from "@/components/PaletteSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LUXURY_PALETTES } from "@/config/palette";
 
@@ -60,7 +59,7 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
     user, logout, notificationCount, resetNotificationCount,
     newMessagesAlert, onlineUsers, palette,
   } = useAppStore();
-  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.violet;
+  const activeTheme = LUXURY_PALETTES[palette] || LUXURY_PALETTES.emerald;
   const navigate = useNavigate();
 
   const [activePanel, setActivePanel] = useState<PanelType>("chats");
@@ -463,9 +462,8 @@ export default function Sidebar({ selectedChat, onSelectChat, chats, onRefreshCh
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Theme and Palette tools */}
+        {/* Theme tools */}
         <div className="flex flex-col items-center gap-2 mb-2">
-          <PaletteSwitcher compact align="left" />
           <ThemeToggle />
         </div>
 
