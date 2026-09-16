@@ -1,135 +1,112 @@
+<div align="center">
+
 # 💎 Emerald Chat
 
-> **Modern, Executive Real-Time Messaging & Encrypted Collaboration Platform**  
-> Engineered with React 18, TypeScript, Tailwind CSS, Node.js, Express, Socket.io, and WebRTC. Styled in **Imperial Emerald**.
+### Modern Real-Time Messaging & Encrypted Collaboration Platform
+
+An executive full-stack chat application built with **React 18**, **TypeScript**, **Socket.io**, and **WebRTC**. Styled in **Imperial Emerald** glassmorphism with automated spam heuristics and rich multimedia sharing.
+
+<br/>
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-00dfa2?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com)
+[![GitHub](https://img.shields.io/badge/GitHub-Jashan--randhawa-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Jashan-randhawa/Chat-Application)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+<br/>
+
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-Realtime-010101?style=flat-square&logo=socket.io&logoColor=white)](https://socket.io/)
+[![WebRTC](https://img.shields.io/badge/WebRTC-P2P_Calls-333333?style=flat-square&logo=webrtc&logoColor=white)](https://webrtc.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Emerald-10B981?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com/)
+[![Zustand](https://img.shields.io/badge/State-Zustand-443e38?style=flat-square)](https://github.com/pmndrs/zustand)
+
+</div>
 
 ---
 
-## 🌟 Highlights
+## ✨ Key Capabilities
 
-- **💎 Imperial Emerald Design System** — Tailored luxury emerald palette (`#10b981`), glassmorphism, responsive navigation rail, and dark/light modes.
-- **⚡ Real-Time Messaging Mesh** — Sub-millisecond WebSocket communication powered by Socket.io, online presence tracking, typing indicators, and read receipts.
-- **📎 WhatsApp-Style Selective Media & Document Sharing** — Multi-file selective document preview, list-manner inspection, custom captions, and Cloudinary media processing.
-- **🛡️ Automated Content Moderation & Spam Engine** — Zero-API-key heuristics with `leo-profanity` & `glin-profanity` for leetspeak/obfuscation, crypto scams, phishing links, and cross-message burst/duplicate flood detection.
-- **📞 Peer-to-Peer Calls** — Real-time audio and video calling powered by WebRTC mesh signaling.
-- **📸 24-Hour Stories / Status** — Rich text and multimedia status sharing with auto-expiration and viewed indicators.
-- **🔒 Admin Control Center** — Comprehensive admin portal with security telemetry, live content safety scoring, user dossiers, channel inspection, and 1-click message purge.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend (`chatapp-frontend-master`)
-- **Framework**: React 18 + Vite + TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui + Lucide Icons + Framer Motion
-- **State**: Zustand (`appStore`)
-- **Networking**: Axios + Socket.io Client
-- **Charts**: Chart.js + React-Chartjs-2
-- **Testing**: Vitest
-
-### Backend (`chatapp-server-master`)
-- **Runtime**: Node.js (ESM) + Express
-- **Database**: MongoDB + Mongoose
-- **Real-Time**: Socket.io Server
-- **Security & Auth**: JWT (HS256) + bcrypt + Helmet + Express Rate Limit
-- **Moderation**: `leo-profanity` + `glin-profanity` + Custom Token Deobfuscator
-- **Storage**: Cloudinary + Multer
+- ⚡ **Real-Time Mesh** — Sub-millisecond WebSocket delivery via Socket.io with typing indicators, online presence, and read receipts.
+- 📞 **P2P Audio & Video Calls** — Crystal-clear peer-to-peer calling powered by WebRTC mesh signaling.
+- 📎 **WhatsApp-Style Media & Documents** — Selective multi-file inspection, custom captions, and Cloudinary media processing.
+- 🛡️ **Automated Content Moderation** — Zero-key heuristics for profanity, crypto scams, phishing links, and message flood/burst protection.
+- 📸 **24-Hour Stories** — Multimedia and text status updates with automatic 24-hour expiration.
+- 💎 **Imperial Emerald Theme** — Luxury emerald palette (`#10b981`), dark/light mode toggle, and responsive glassmorphic navigation rail.
+- 🔒 **Admin Command Center** — Security telemetry, safety scoring, user dossiers, and 1-click message purge.
 
 ---
 
-## 📁 Repository Layout
+## 🛠️ Architecture & Tech Stack
 
-```
-Chat-Application/
-├── chatapp-frontend-master/     # React 18 + Vite client
-│   ├── public/                  # Emerald logo.svg & favicon.svg
-│   └── src/
-│       ├── components/          # AppLogo, ChatArea, Sidebar, AdminLayout
-│       ├── pages/               # Index, Login, Groups, Admin (Dashboard, Messages, Users, Chats)
-│       ├── store/               # Zustand state store
-│       └── services/            # Axios API endpoints
-│
-└── chatapp-server-master/       # Express + Socket.io backend
-    ├── controllers/             # chat.js, user.js, admin.js, status.js
-    ├── utils/                   # moderation.js (spam heuristics & flood engine)
-    ├── middlewares/             # auth.js, error.js, multer.js
-    ├── models/                  # User, Message, Chat, Request, Status
-    └── app.js                   # Server entrypoint & WebSocket handler
-```
+| Layer | Technologies | Role |
+| :--- | :--- | :--- |
+| **Frontend** | **React 18**, Vite, TypeScript, Tailwind CSS, shadcn/ui | Glassmorphic UI, responsive layouts, client routing |
+| **State & Flow** | **Zustand**, Axios, Framer Motion | Lightweight reactive store & smooth UI micro-interactions |
+| **Real-Time & Calls** | **Socket.io Client**, WebRTC API | Event-driven WebSocket chat & peer-to-peer calling |
+| **Backend API** | **Node.js (ESM)**, Express.js | REST routing, JWT authentication, and rate limiting |
+| **Data & Storage** | **MongoDB Atlas** (Mongoose), Cloudinary CDN | Persistent documents, conversation logs & cloud media CDN |
+| **Content Safety** | `leo-profanity`, `glin-profanity`, Token Deobfuscator | In-flight content sanitization and anti-spam shields |
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Backend Setup
-
+### 1. Backend Server
 ```bash
 cd chatapp-server-master
 npm install
+
+# Configure environment (create .env)
+# PORT=3000, MONGO_URI, JWT_SECRET, CLOUDINARY_*
+
+npm start          # Runs on http://localhost:3000
 ```
 
-Create `.env` in `chatapp-server-master/`:
-
-```env
-PORT=3000
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_super_secret_jwt_key
-ADMIN_SECRET_KEY=your_admin_master_secret
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-```
-
-Start the server:
+### 2. Frontend Client
 ```bash
-npm start
-```
-
-### 2. Frontend Setup
-
-```bash
+# In a separate terminal
 cd chatapp-frontend-master
 npm install
+
+# Configure environment (create .env)
+# VITE_SERVER=http://localhost:3000
+
+npm run dev        # Runs on http://localhost:5173
 ```
-
-Create `.env` in `chatapp-frontend-master/`:
-
-```env
-VITE_SERVER=http://localhost:3000
-```
-
-Start the frontend development server:
-```bash
-npm run dev
-```
-
-Visit `http://localhost:5173` to launch **Emerald Chat**.
 
 ---
 
-## 🛡️ Content Moderation & Security Engine
+## 📁 Project Structure
 
-The server includes an automated moderation engine ([`utils/moderation.js`](chatapp-server-master/utils/moderation.js)):
-
-1. **Abusive Language & Profanity**: Dual-engine detection via `leo-profanity` and `glin-profanity`, combined with single-letter token deobfuscation (`f.u.c.k` / `f u c k` $\to$ `fuck`).
-2. **Threats & Hate Speech**: Immediate high-severity escalation for critical threat phrases.
-3. **Spam & Phishing**: Filters crypto giveaways, investment scams, and suspicious URL shorteners (`bit.ly`, `tinyurl.com`, `.xyz`, etc.).
-4. **Flood Pattern Detection**:
-   - **Duplicate Message Flood**: Flags senders posting the same message $\ge 3$ times within 60s.
-   - **Burst Rate Flood**: Flags senders sending $\ge 8$ messages within 60s.
-5. **Admin Moderation Queue**: 1-click filtering (`Flagged`, `Spam`, `Inappropriate`) and immediate message/media deletion from MongoDB and Cloudinary.
-
----
-
-## 📦 Production Deployment
-
-- **Frontend (Vercel)**: Import `chatapp-frontend-master/`, set `VITE_SERVER=https://your-backend.onrender.com`.
-- **Backend (Render)**: Deploy `chatapp-server-master/` as a Node Web Service, set `.env` variables, and build with `npm install && npm start`.
+```
+Chat-Application/
+├── chatapp-frontend-master/     # React 18 + TypeScript Client
+│   ├── src/components/          # ChatArea, Sidebar, AdminLayout, AppLogo
+│   ├── src/pages/               # Chat, Groups, Stories, Admin Dashboard
+│   └── src/store/               # Zustand state management
+└── chatapp-server-master/       # Express + Socket.io Server
+    ├── controllers/             # chat.js, user.js, admin.js, status.js
+    ├── utils/                   # moderation.js (heuristics & anti-flood)
+    └── models/                  # User, Message, Chat, Request, Status
+```
 
 ---
 
-## 📄 License
+## 👨‍💻 Creator & Maintainer
 
-This project is licensed under the MIT License — open for personal and commercial development.
+<div align="center">
+
+**Jashanpreet Singh**  
+*Full Stack & AI Developer*
+
+[![Portfolio](https://img.shields.io/badge/Portfolio-jashan2978.vercel.app-00dfa2?style=flat-square&logo=vercel&logoColor=white)](https://jashan2978.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-Jashan--randhawa-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/Jashan-randhawa)
+
+<br/>
+
+<sub>Distributed under the [MIT License](./LICENSE). Made with 💎 for seamless real-time collaboration.</sub>
+
+</div>
